@@ -16,4 +16,8 @@
     <Folder Include="Validations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\E-Biznes.Domain\E-Biznes.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
