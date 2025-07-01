@@ -1,0 +1,6 @@
+@E_Biznes.WepApi_HostAddress = http://localhost:5205
+
+GET {{E_Biznes.WepApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
