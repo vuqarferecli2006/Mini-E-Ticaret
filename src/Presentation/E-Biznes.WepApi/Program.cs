@@ -16,14 +16,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 
-//builder.Services.AddIdentity<AppUser, IdentityRole>(
-//options =>
-//    {
-//        options.Password.RequireDigit = false;
-//        options.Password.RequiredLength = 6;
-//})
-//    .AddEntityFrameworkStores<AppDbContext>()
-//    .AddDefaultTokenProviders();
+builder.Services.AddIdentity<AppUser, IdentityRole>(
+options =>
+    {
+        options.Password.RequireDigit = false;
+        options.Password.RequiredLength = 6;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
 
 var app = builder.Build();

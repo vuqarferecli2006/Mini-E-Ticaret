@@ -3,8 +3,8 @@
 public class Order:BaseEntity
 {
 
-    public Guid UserId { get; set; }
-    public AppUser User { get; set; } = null!;
+    public string? UserId { get; set; }
+    public AppUser? User { get; set; } 
 
     public ICollection<OrderProduct> OrderProducts { get; set; } = new List<OrderProduct>();
 }

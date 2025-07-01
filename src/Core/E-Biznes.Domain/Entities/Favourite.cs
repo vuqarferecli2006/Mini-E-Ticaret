@@ -1,9 +1,11 @@
-﻿namespace E_Biznes.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+namespace E_Biznes.Domain.Entities;
 
 public class Favourite:BaseEntity
 {
-    public Guid UserId { get; set; }
-    public AppUser User { get; set; } = null!;
+    public string? UserId { get; set; }
+    public AppUser? User { get; set; } 
 
     public Guid ProductId { get; set; }
     public Product Product { get; set; } = null!;
