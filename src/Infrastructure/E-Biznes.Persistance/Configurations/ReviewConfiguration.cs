@@ -1,7 +1,7 @@
 ﻿// ProductConfiguration.cs
+using E_Biznes.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using E_Biznes.Domain.Entities;
 
 namespace E_Biznes.Persistance.Configurations;
 
