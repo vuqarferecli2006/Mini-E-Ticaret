@@ -3,6 +3,7 @@ using E_Biznes.Application.DTOs.CategoryDtos;
 using E_Biznes.Application.Shared;
 using E_Biznes.Application.Validations.CategoryValidations;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -23,6 +24,7 @@ namespace E_Biznes.WepApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy =Permission.Category.MainCreate)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -34,6 +36,7 @@ namespace E_Biznes.WepApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = Permission.Category.SubCreate)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -45,6 +48,7 @@ namespace E_Biznes.WepApi.Controllers
 
 
         [HttpDelete]
+        [Authorize(Policy = Permission.Category.Delete)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]

@@ -21,18 +21,21 @@ public class UserService : IUserService
     private readonly UserManager<AppUser> _userManager;
     private readonly SignInManager<AppUser> _signInManager;
     private readonly JwtSetting _jwtSetting;
+    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IMapper _mapper;
 
     public UserService(UserManager<AppUser> userManager,
                         IMapper mapper,
                         SignInManager<AppUser> signInManager,
-                        IOptions<JwtSetting> jwtSetting)
+                        IOptions<JwtSetting> jwtSetting,
+                        RoleManager<IdentityRole> roleManager)
 
     {
         _userManager = userManager;
         _mapper = mapper;
         _signInManager = signInManager;
         _jwtSetting = jwtSetting.Value;
+        _roleManager = roleManager;
     }
 
     public async Task<BaseResponse<string>> RegisterAsync(UserRegisterDto dto)
@@ -96,6 +99,51 @@ public class UserService : IUserService
 
     }
 
+    public async Task<BaseResponse<string>> AddRole(UserAddRoleDto dto)
+    {
+        var user = await _userManager.FindByIdAsync(dto.UserId.ToString());
+
+        if (user is null)
+        {
+            return new BaseResponse<string>("User not found", false, HttpStatusCode.NotFound);
+        }
+
+        var roleNames = new List<string>();
+
+        foreach (var roleId in dto.RoleId.Distinct())
+        {
+            var role = await _roleManager.FindByIdAsync(roleId.ToString());
+
+            if (role == null || string.IsNullOrWhiteSpace(role.Name))
+            {
+                return new BaseResponse<string>($"Role with ID '{roleId}' is invalid or has no name", false, HttpStatusCode.BadRequest);
+            }
+
+            // Əgər artıq həmin roldadırsa, sadəcə əlavə et listə
+            if (await _userManager.IsInRoleAsync(user, role.Name))
+            {
+                roleNames.Add($"{role.Name} (already assigned)");
+                continue;
+            }
+
+            // Əgər rolda deyilsə, əlavə et və listə əlavə et
+            var result = await _userManager.AddToRoleAsync(user, role.Name);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return new BaseResponse<string>($"Failed to assign role '{role.Name}': {errors}", false, HttpStatusCode.BadRequest);
+            }
+
+            roleNames.Add($"{role.Name} (newly assigned)");
+        }
+
+        return new BaseResponse<string>(
+            $"Roles processed successfully: {string.Join(", ", roleNames)}",
+            true,
+            HttpStatusCode.OK
+        );
+    }
+
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters
@@ -149,10 +197,10 @@ public class UserService : IUserService
         {
             claims.Add(new Claim(ClaimTypes.Role, roleName));
 
-            var role = await _userManager.FindByNameAsync(roleName);
+            var role = await _roleManager.FindByNameAsync(roleName);
             if (role is not null)
             {
-                var roleClaims = await _userManager.GetClaimsAsync(role);
+                var roleClaims = await _roleManager.GetClaimsAsync(role);
                 var rolePermissions = roleClaims
                     .Where(c => c.Type == "Permission")
                     .ToList();

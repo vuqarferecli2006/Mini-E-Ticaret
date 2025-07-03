@@ -30,12 +30,33 @@ namespace E_Biznes.WepApi.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
         {
             var result = await _userService.LoginAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(typeof(BaseResponse<TokenResponse>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> RefreshToken([FromBody] RefrexhTokenRequestDto dto)
+        {
+            var result = await _userService.RefreshTokenAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        } 
+
+        [HttpPost("assign-roles")]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> AddRole([FromBody] UserAddRoleDto dto)
+        {
+            var result = await _userService.AddRole(dto);
             return StatusCode((int)result.StatusCode, result);
         }
 
