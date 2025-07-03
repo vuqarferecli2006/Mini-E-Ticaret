@@ -8,9 +8,11 @@ public class AppUser:IdentityUser
 
     public string Address { get; set; } = string.Empty;
 
-    public int Age { get; set; }
+    public string? RefreshToken { get; set; }
 
-    public DateTime BirthDate { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
+
+    public int Age { get; set; }
 
     public ICollection<Favourite> Favourites { get; set; }= new List<Favourite>();
     public ICollection<Order> Orders { get; set; } = new List<Order>();

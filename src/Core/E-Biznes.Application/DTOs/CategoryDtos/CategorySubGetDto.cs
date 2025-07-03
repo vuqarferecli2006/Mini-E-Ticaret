@@ -1,6 +1,6 @@
 ﻿namespace E_Biznes.Application.DTOs.CategoryDtos;
 
-public class CategorySubGetDto
+public record CategorySubGetDto
 {
     public string Name { get; set; } = string.Empty;
 

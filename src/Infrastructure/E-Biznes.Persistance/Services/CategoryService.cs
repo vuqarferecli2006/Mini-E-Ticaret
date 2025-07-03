@@ -45,8 +45,9 @@ public class CategoryService : ICategoryService
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangeAsync();
 
-        return new("Subcategory created", HttpStatusCode.OK);
+        return new("Subcategory created",true, HttpStatusCode.OK);
     }
+
     public async Task<BaseResponse<string>> AddMainCategoryAsync(CategoryMainCreateDto dto)
     {
 
@@ -61,7 +62,7 @@ public class CategoryService : ICategoryService
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangeAsync();
 
-        return new("Main category created", HttpStatusCode.OK);
+        return new("Main category created",true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<object>> DeleteAsync(Guid id)
@@ -73,7 +74,7 @@ public class CategoryService : ICategoryService
 
         _categoryRepository.Delete(categoryDb);
         await _categoryRepository.SaveChangeAsync();
-        return new("Category is deleted", HttpStatusCode.OK);
+        return new("Category is deleted",true, HttpStatusCode.OK);
 
     }
 
@@ -89,7 +90,6 @@ public class CategoryService : ICategoryService
 
         return new("Success", dtos, HttpStatusCode.OK);
     }
-
 
     public Task<BaseResponse<string>> GetByIdAsync(Guid id)
     {

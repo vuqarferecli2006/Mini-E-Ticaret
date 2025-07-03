@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace E_Biznes.Persistance.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250703115851_First")]
+    [Migration("20250703154844_First")]
     partial class First
     {
         /// <inheritdoc />
@@ -40,9 +40,6 @@ namespace E_Biznes.Persistance.Migrations
 
                     b.Property<int>("Age")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("BirthDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
