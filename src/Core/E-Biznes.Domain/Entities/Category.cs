@@ -6,7 +6,7 @@ public class Category:BaseEntity
 
     public string Description { get; set; } = string.Empty;
 
-    public Guid ParentCategoryId { get; set; }
+    public Guid? ParentCategoryId { get; set; }
 
     public Category? ParentCategory { get; set; }
 
