@@ -73,6 +73,9 @@ options =>
 builder.Services.Configure<JwtSetting>(
     builder.Configuration.GetSection("Jwt")
 );
+builder.Services.Configure<EmailSetting>(
+    builder.Configuration.GetSection("EmailSetting")
+);
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSetting>();
 
 builder.Services.AddAuthorization(options =>

@@ -12,7 +12,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+using System.Web;
 
 namespace E_Biznes.Persistance.Services;
 
@@ -23,12 +23,14 @@ public class UserService : IUserService
     private readonly JwtSetting _jwtSetting;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IMapper _mapper;
+    private readonly IEmailService _mailservice;
 
     public UserService(UserManager<AppUser> userManager,
                         IMapper mapper,
                         SignInManager<AppUser> signInManager,
                         IOptions<JwtSetting> jwtSetting,
-                        RoleManager<IdentityRole> roleManager)
+                        RoleManager<IdentityRole> roleManager,
+                        IEmailService mailservice)
 
     {
         _userManager = userManager;
@@ -36,6 +38,7 @@ public class UserService : IUserService
         _signInManager = signInManager;
         _jwtSetting = jwtSetting.Value;
         _roleManager = roleManager;
+        _mailservice = mailservice;
     }
 
     public async Task<BaseResponse<string>> RegisterAsync(UserRegisterDto dto)
@@ -58,7 +61,26 @@ public class UserService : IUserService
             }
             return new(errorMessage.ToString(), HttpStatusCode.BadRequest);
         }
+        var emailConfirmLink = await GetEmailConfirm(user);
+
+        await _mailservice.SendEmailAsync(new List<string> { user.Email }, "Email Confirmation", emailConfirmLink);
+
         return new("User registered successfully", true, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<string>> ConfirmEmail(string userId, string token)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return new("Email confirmation failed", false, HttpStatusCode.BadRequest);
+        }
+        var result = await _userManager.ConfirmEmailAsync(user, token);
+        if (!result.Succeeded)
+        {
+            return new("Email confirmation failed", false, HttpStatusCode.BadRequest);
+        }
+        return new("Email confirmed successfully", true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<TokenResponse>> LoginAsync(UserLoginDto dto)
@@ -68,11 +90,19 @@ public class UserService : IUserService
         {
             return new("Email or password incorrect", HttpStatusCode.NotFound);
         }
+
+        if (!useremail.EmailConfirmed)
+        {
+            return new("Please confirm your email", false, HttpStatusCode.BadRequest);
+        }
+
         SignInResult signInResult = await _signInManager.PasswordSignInAsync(useremail, dto.Password, true, true);
         if (!signInResult.Succeeded)
         {
             return new("Email or password incorrect", HttpStatusCode.NotFound);
         }
+        
+
         var token = await GenerateJwttoken(useremail);
 
         return new("Login successful", token, HttpStatusCode.OK);
@@ -252,4 +282,10 @@ public class UserService : IUserService
         return Convert.ToBase64String(randomBytes);
     }
 
+    private async Task<string> GetEmailConfirm(AppUser user)
+    {
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var emailConfirmLink = $"https://localhost:7045/api/Accounts/ConfirmEmail?token={HttpUtility.UrlEncode(token)}&userId={user.Id}";
+        return emailConfirmLink;
+    }
 }
