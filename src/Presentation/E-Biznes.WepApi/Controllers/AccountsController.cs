@@ -1,4 +1,5 @@
-﻿using E_Biznes.Application.Abstract.Service;
+﻿using AzBinaTeam.Application.DTOs.UserDtos;
+using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
 using Microsoft.AspNetCore.Mvc;
@@ -48,7 +49,19 @@ namespace E_Biznes.WepApi.Controllers
         {
             var result = await _userService.RefreshTokenAsync(dto);
             return StatusCode((int)result.StatusCode, result);
-        } 
+        }
+
+
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<TokenResponse>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId,[FromQuery]string token)
+        {
+            var result = await _userService.ConfirmEmail(userId,token);
+            return StatusCode((int)result.StatusCode, result);
+        }
 
         [HttpPost("assign-roles")]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
@@ -59,6 +72,26 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _userService.AddRole(dto);
             return StatusCode((int)result.StatusCode, result);
         }
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> SendResetConfirmEmail([FromQuery] string email)
+        {
+            var result = await _userService.SendResetPasswordEmail(email);
+            return StatusCode((int)result.StatusCode, result);
+        }
 
+        [HttpPost]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordDto dto)
+        {
+            var result = await _userService.ResetPassword(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 }

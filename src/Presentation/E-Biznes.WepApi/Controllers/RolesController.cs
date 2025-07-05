@@ -19,7 +19,7 @@ namespace E_Biznes.WepApi.Controllers
             _roleService = roleService;
         }
 
-        [HttpGet("permission")]
+        [HttpGet]
         public IActionResult GetAllPermission()
         {
             var permissions = PermissionHelper.GetAllPermissions();

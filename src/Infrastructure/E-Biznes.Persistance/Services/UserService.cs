@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using AzBinaTeam.Application.DTOs.UserDtos;
 using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
 using E_Biznes.Application.Shared.Settings;
 using E_Biznes.Domain.Entities;
+using E_Biznes.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -40,6 +42,8 @@ public class UserService : IUserService
         _roleManager = roleManager;
         _mailservice = mailservice;
     }
+
+
 
     public async Task<BaseResponse<string>> RegisterAsync(UserRegisterDto dto)
     {
@@ -174,6 +178,51 @@ public class UserService : IUserService
         );
     }
 
+    public async Task<BaseResponse<string>> ResetPassword(UserResetPasswordDto dto)
+    {
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user is null)
+        {
+            return new("User not found", false, HttpStatusCode.NotFound);
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            return new("Please confirm your email", false, HttpStatusCode.BadRequest);
+        }
+
+        // Tokeni burada decode edirik
+        var decodedToken = HttpUtility.UrlDecode(dto.Token);
+
+        var result = await _userManager.ResetPasswordAsync(user, decodedToken, dto.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return new($"Failed to reset password: {errors}", false, HttpStatusCode.BadRequest);
+        }
+        user.EmailConfirmed = true;
+        return new("Password reset successfully", true, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<string>> SendResetPasswordEmail(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user is null)
+        {
+            return new BaseResponse<string>("User not found", false, HttpStatusCode.NotFound);
+        }
+
+        // Token və link yaratmaq üçün hazır metoddan istifadə
+        var resetLink = await GetEmailResetConfirm(user);
+
+        // İstifadəçiyə reset linkini email kimi göndər
+        await _mailservice.SendEmailAsync(new List<string> { user.Email }, "Reset Password", resetLink);
+
+        return new BaseResponse<string>("Email confirmed successfully", true, HttpStatusCode.OK);
+    }
+
+
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters
@@ -207,6 +256,14 @@ public class UserService : IUserService
         }
 
         return null;
+    }
+
+    private async Task<string> GetEmailResetConfirm(AppUser user)
+    {
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var link = $"https://localhost:7045/api/Accounts/SendResetConfirmEmail?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
+        Console.WriteLine("Reset Password Link : " + link);
+        return link;
     }
 
     private async Task<TokenResponse> GenerateJwttoken(AppUser user)

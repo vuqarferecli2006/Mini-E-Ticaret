@@ -1,8 +1,8 @@
 ﻿namespace E_Biznes.Application.DTOs.UserDtos;
 
 public record UserAddRoleDto
-{
-    public Guid UserId { get; set; }
+(
+     Guid UserId ,
 
-    public List<Guid>? RoleId { get; set; }
-}
+     List<Guid>? RoleId 
+);
