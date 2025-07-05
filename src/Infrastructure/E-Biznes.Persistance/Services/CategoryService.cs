@@ -88,7 +88,7 @@ public class CategoryService : ICategoryService
 
         var dtos = _mapper.Map<List<CategoryMainGetDto>>(categories);
 
-        return new("Success", dtos, HttpStatusCode.OK);
+        return new("Success", dtos,true, HttpStatusCode.OK);
     }
 
     public Task<BaseResponse<string>> GetByIdAsync(Guid id)

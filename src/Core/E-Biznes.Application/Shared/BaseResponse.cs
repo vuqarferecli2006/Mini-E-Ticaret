@@ -29,12 +29,18 @@ public class BaseResponse<T>
         Succes = isSucces;
         StatusCode=statusCode;
     }
-    public BaseResponse(string message,T? data,HttpStatusCode statusCode)
+    public BaseResponse(T? data, bool isSucces, HttpStatusCode statusCode)
+    {
+        Data = data;
+        Succes = isSucces;
+        StatusCode = statusCode;
+    }
+    public BaseResponse(string message,T? data,bool isSucces,HttpStatusCode statusCode)
     {
         Message = message;
         StatusCode = statusCode;
         Data = data;
-        Succes = true;
+        Succes = isSucces;
     }
 
 }

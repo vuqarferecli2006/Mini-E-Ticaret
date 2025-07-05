@@ -9,6 +9,7 @@ using E_Biznes.Domain.Entities;
 using E_Biznes.Domain.Enum;
 using E_Biznes.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -100,8 +101,6 @@ public class UserService : IUserService
         return new("User registered successfully", true, HttpStatusCode.OK);
     }
 
-
-
     public async Task<BaseResponse<string>> ConfirmEmail(string userId, string token)
     {
         var user = await _userManager.FindByIdAsync(userId);
@@ -135,11 +134,11 @@ public class UserService : IUserService
         {
             return new("Email or password incorrect", HttpStatusCode.NotFound);
         }
-        
+
 
         var token = await GenerateJwttoken(useremail);
 
-        return new("Login successful", token, HttpStatusCode.OK);
+        return new("Login successful", token,true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<TokenResponse>> RefreshTokenAsync(RefrexhTokenRequestDto request)
@@ -159,7 +158,7 @@ public class UserService : IUserService
             return new BaseResponse<TokenResponse>("Invalid refresh token", false, HttpStatusCode.Unauthorized);
 
         var tokenResponse = await GenerateJwttoken(user);
-        return new("Token refreshed successfully", tokenResponse, HttpStatusCode.OK);
+        return new("Token refreshed successfully", tokenResponse,true, HttpStatusCode.OK);
 
     }
 
@@ -268,6 +267,48 @@ public class UserService : IUserService
         await _mailservice.SendEmailAsync(new List<string> { user.Email }, "Reset Password", resetLink);
 
         return new BaseResponse<string>("Email confirmed successfully", true, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<List<UserGetDto>>> GetAllAsync()
+    {
+        var users = await _userManager.Users
+         .Include(u => u.Orders) // Orders navigation property varsa
+         .ToListAsync();
+
+        if (users.Count == 0)
+        {
+            return new("No users found", false, HttpStatusCode.NotFound);
+        }
+
+        var result = new List<UserGetDto>();
+
+        foreach (var user in users)
+        {
+            var userDto = _mapper.Map<UserGetDto>(user);
+
+            // Rolları ayrıca çəkirik
+            var roles = await _userManager.GetRolesAsync(user);
+            userDto.Roles = roles.ToList();
+
+            result.Add(userDto);
+        }
+
+        return new BaseResponse<List<UserGetDto>>(result, true, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<UserGetDto>> GetByIdAsync(string id)
+    {
+        var user = await _userManager.Users
+            .Include(u => u.Orders) // Orders navigation property varsa
+            .FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null)
+        {
+            return new("User not found", false, HttpStatusCode.NotFound);
+        }
+        var userDto = _mapper.Map<UserGetDto>(user);
+        var roles = await _userManager.GetRolesAsync(user);
+        userDto.Roles = roles.ToList();
+        return new BaseResponse<UserGetDto>(userDto, true, HttpStatusCode.OK);
     }
 
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
@@ -393,5 +434,5 @@ public class UserService : IUserService
         return emailConfirmLink;
     }
 
-    
+
 }

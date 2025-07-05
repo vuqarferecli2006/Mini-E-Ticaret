@@ -16,10 +16,12 @@ namespace E_Biznes.WepApi.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IUserService _userService;
 
-        public AccountsController(IAccountService accountService)
+        public AccountsController(IAccountService accountService, IUserService userService)
         {
             _accountService = accountService;
+            _userService = userService;
         }
         [HttpPost]
         [Authorize(Policy =Permission.Account.Create)]
@@ -31,7 +33,25 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _accountService.AdminRegisterAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
-
-        
+        [HttpGet]
+        [Authorize(Policy = Permission.User.GetAll)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAllUsersAsync()
+        {
+            var result = await _userService.GetAllAsync();
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpGet]
+        [Authorize(Policy = Permission.User.GetById)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetById([FromQuery] string id)
+        {
+            var result = await _userService.GetByIdAsync(id);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 }

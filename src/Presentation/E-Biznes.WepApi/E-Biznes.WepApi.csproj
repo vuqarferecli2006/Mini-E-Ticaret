@@ -25,4 +25,9 @@
     <ProjectReference Include="..\..\Infrastructure\E-Biznes.Persistance\E-Biznes.Persistance.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\product-images\" />
+    <Folder Include="wwwroot\products\" />
+  </ItemGroup>
+
 </Project>

@@ -19,4 +19,8 @@ public interface IUserService
     Task<BaseResponse<string>> ResetPassword(UserResetPasswordDto dto);
 
     Task<BaseResponse<string>> SendResetPasswordEmail(string email);
+
+    Task<BaseResponse<List<UserGetDto>>> GetAllAsync();
+
+    Task<BaseResponse<UserGetDto>> GetByIdAsync(string id);
 }

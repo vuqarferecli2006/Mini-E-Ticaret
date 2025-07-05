@@ -54,6 +54,7 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+    
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -111,7 +112,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterService();
 
 var app = builder.Build();
@@ -122,6 +123,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(); // wwwroot içind?ki ??kill?r? brauzer daxil ola bilsin dey?
 
 app.UseHttpsRedirection();
 
