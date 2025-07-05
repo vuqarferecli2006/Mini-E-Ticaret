@@ -1,4 +1,6 @@
-﻿namespace E_Biznes.Application.DTOs.UserDtos;
+﻿using E_Biznes.Domain.Enum;
+
+namespace E_Biznes.Application.DTOs.UserDtos;
 
 public record UserRegisterDto
 {
@@ -11,5 +13,7 @@ public record UserRegisterDto
     public string Address { get; set; } = string.Empty;
 
     public int Age { get; set; }
+
+    public UserRole RoleId { get; set; } 
 
 }

@@ -26,6 +26,7 @@ public static class ServiceRegistration
             services.AddScoped<RoleCreationHelper>();
             services.AddScoped<RoleUpdateHelper>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IAccountService,AccountService>();
 
 
         #endregion

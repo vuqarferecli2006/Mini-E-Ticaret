@@ -89,6 +89,7 @@ public static class Permission
             GetDetail
         };
     }
+
     public static class User
     {
         public const string PasswordReset = "User.PasswordReset";
@@ -104,6 +105,7 @@ public static class Permission
             GetById
         };
     }
+
     public static class Review
     {
         public const string Create = "Review.Create";
@@ -115,6 +117,5 @@ public static class Permission
             Delete
         };
     }
-
 
 }

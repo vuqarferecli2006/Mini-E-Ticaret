@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using AzBinaTeam.Application.DTOs.UserDtos;
 using E_Biznes.Application.Abstract.Service;
+using E_Biznes.Application.DTOs.AccountsDto;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
 using E_Biznes.Application.Shared.Settings;
 using E_Biznes.Domain.Entities;
+using E_Biznes.Domain.Enum;
 using E_Biznes.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -48,10 +50,17 @@ public class UserService : IUserService
     public async Task<BaseResponse<string>> RegisterAsync(UserRegisterDto dto)
     {
         var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+
         if (existingUser is not null)
         {
             return new("This email is already registered", HttpStatusCode.BadRequest);
         }
+
+        if (dto.RoleId != UserRole.Buyer && dto.RoleId != UserRole.Seller)
+        {
+            return new("Invalid role", HttpStatusCode.BadRequest);
+        }
+
         AppUser user = _mapper.Map<AppUser>(dto);
 
         IdentityResult ıdentityResult = await _userManager.CreateAsync(user, dto.Password);
@@ -65,12 +74,33 @@ public class UserService : IUserService
             }
             return new(errorMessage.ToString(), HttpStatusCode.BadRequest);
         }
+
+        string roleName = dto.RoleId switch
+        {
+            UserRole.Buyer => "Buyer",
+            UserRole.Seller => "Seller",
+            _ => throw new ArgumentOutOfRangeException(nameof(dto.RoleId), "Invalid user role")
+        };
+
+        if (roleName is null)
+        {
+            return new("Role assignment failed", HttpStatusCode.InternalServerError);
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(user, roleName);
+        if (!roleResult.Succeeded)
+        {
+            return new("User created but role assignment failed", HttpStatusCode.InternalServerError);
+        }
+
         var emailConfirmLink = await GetEmailConfirm(user);
 
         await _mailservice.SendEmailAsync(new List<string> { user.Email }, "Email Confirmation", emailConfirmLink);
 
         return new("User registered successfully", true, HttpStatusCode.OK);
     }
+
+
 
     public async Task<BaseResponse<string>> ConfirmEmail(string userId, string token)
     {
@@ -142,7 +172,8 @@ public class UserService : IUserService
             return new BaseResponse<string>("User not found", false, HttpStatusCode.NotFound);
         }
 
-        var roleNames = new List<string>();
+        var seenRoleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var roleNamesToAssign = new List<string>();
 
         foreach (var roleId in dto.RoleId.Distinct())
         {
@@ -152,27 +183,44 @@ public class UserService : IUserService
             {
                 return new BaseResponse<string>($"Role with ID '{roleId}' is invalid or has no name", false, HttpStatusCode.BadRequest);
             }
-
-            // Əgər artıq həmin roldadırsa, sadəcə əlavə et listə
             if (await _userManager.IsInRoleAsync(user, role.Name))
             {
-                roleNames.Add($"{role.Name} (already assigned)");
-                continue;
+                return new BaseResponse<string>($"User already has the role '{role.Name}'", false, HttpStatusCode.BadRequest);
+            }
+            // Eyni adda role təyin olunursa (məsələn, 2 müxtəlif ID eyni adda roldur)
+            if (!seenRoleNames.Add(role.Name))
+            {
+                return new BaseResponse<string>($"Duplicate role '{role.Name}' detected in request", false, HttpStatusCode.BadRequest);
             }
 
-            // Əgər rolda deyilsə, əlavə et və listə əlavə et
-            var result = await _userManager.AddToRoleAsync(user, role.Name);
+            roleNamesToAssign.Add(role.Name);
+        }
+
+        // Əvvəlki rolları silirik
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        if (currentRoles.Any())
+        {
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            if (!removeResult.Succeeded)
+            {
+                var errors = string.Join(", ", removeResult.Errors.Select(e => e.Description));
+                return new BaseResponse<string>($"Failed to remove existing roles: {errors}", false, HttpStatusCode.InternalServerError);
+            }
+        }
+
+        // Yeni rolları təyin edirik
+        foreach (var roleName in roleNamesToAssign)
+        {
+            var result = await _userManager.AddToRoleAsync(user, roleName);
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return new BaseResponse<string>($"Failed to assign role '{role.Name}': {errors}", false, HttpStatusCode.BadRequest);
+                return new BaseResponse<string>($"Failed to assign role '{roleName}': {errors}", false, HttpStatusCode.BadRequest);
             }
-
-            roleNames.Add($"{role.Name} (newly assigned)");
         }
 
         return new BaseResponse<string>(
-            $"Roles processed successfully: {string.Join(", ", roleNames)}",
+            $"Roles updated successfully: {string.Join(", ", roleNamesToAssign)}",
             true,
             HttpStatusCode.OK
         );
@@ -222,7 +270,6 @@ public class UserService : IUserService
         return new BaseResponse<string>("Email confirmed successfully", true, HttpStatusCode.OK);
     }
 
-
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters
@@ -261,7 +308,7 @@ public class UserService : IUserService
     private async Task<string> GetEmailResetConfirm(AppUser user)
     {
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var link = $"https://localhost:7045/api/Accounts/SendResetConfirmEmail?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
+        var link = $"https://localhost:7045/api/User/SendResetConfirmEmail?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
         Console.WriteLine("Reset Password Link : " + link);
         return link;
     }
@@ -342,7 +389,9 @@ public class UserService : IUserService
     private async Task<string> GetEmailConfirm(AppUser user)
     {
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var emailConfirmLink = $"https://localhost:7045/api/Accounts/ConfirmEmail?token={HttpUtility.UrlEncode(token)}&userId={user.Id}";
+        var emailConfirmLink = $"https://localhost:7045/api/User/ConfirmEmail?token={HttpUtility.UrlEncode(token)}&userId={user.Id}";
         return emailConfirmLink;
     }
+
+    
 }

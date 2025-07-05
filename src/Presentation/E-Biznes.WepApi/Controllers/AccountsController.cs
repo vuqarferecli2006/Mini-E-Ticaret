@@ -1,7 +1,9 @@
 ﻿using AzBinaTeam.Application.DTOs.UserDtos;
 using E_Biznes.Application.Abstract.Service;
+using E_Biznes.Application.DTOs.AccountsDto;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -13,85 +15,23 @@ namespace E_Biznes.WepApi.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IAccountService _accountService;
 
-        public AccountsController(IUserService userService)
+        public AccountsController(IAccountService accountService)
         {
-            _userService = userService;
+            _accountService = accountService;
         }
-
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<string>),(int)HttpStatusCode.Created)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
-        {
-            var result=await _userService.RegisterAsync(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
-        [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
-        {
-            var result = await _userService.LoginAsync(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
-        [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<TokenResponse>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> RefreshToken([FromBody] RefrexhTokenRequestDto dto)
-        {
-            var result = await _userService.RefreshTokenAsync(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
-
-        [HttpGet]
-        [ProducesResponseType(typeof(BaseResponse<TokenResponse>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId,[FromQuery]string token)
-        {
-            var result = await _userService.ConfirmEmail(userId,token);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
-        [HttpPost("assign-roles")]
+        [Authorize(Policy =Permission.Account.Create)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> AddRole([FromBody] UserAddRoleDto dto)
+        public async Task<IActionResult> AdminCreateUser([FromBody] AccountRegisterDto dto)
         {
-            var result = await _userService.AddRole(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
-        [HttpGet]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> SendResetConfirmEmail([FromQuery] string email)
-        {
-            var result = await _userService.SendResetPasswordEmail(email);
+            var result = await _accountService.AdminRegisterAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
 
-        [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordDto dto)
-        {
-            var result = await _userService.ResetPassword(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
+        
     }
 }

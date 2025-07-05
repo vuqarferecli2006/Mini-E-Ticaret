@@ -1,9 +1,10 @@
 ﻿using E_Biznes.Application.DTOs.UserDtos;
+using E_Biznes.Domain.Enum;
 using FluentValidation;
 
 namespace E_Biznes.Application.Validations.UserValidations;
 
-public class UserRegisterValidator:AbstractValidator<UserRegisterDto>
+public class UserRegisterValidator : AbstractValidator<UserRegisterDto>
 {
     public UserRegisterValidator()
     {
@@ -27,6 +28,10 @@ public class UserRegisterValidator:AbstractValidator<UserRegisterDto>
             .MaximumLength(200).WithMessage("Address must be at most 200 characters.");
 
         RuleFor(x => x.Age)
-            .InclusiveBetween(12, 120).WithMessage("Age must be between 12 and 120.");
+            .InclusiveBetween(18, 100).WithMessage("Age must be between 18 and 100.");
+
+        RuleFor(x => x.RoleId)
+            .Must(role => role == UserRole.Buyer || role == UserRole.Seller)
+            .WithMessage("Only Buyer or Seller roles are allowed.");
     }
 }
