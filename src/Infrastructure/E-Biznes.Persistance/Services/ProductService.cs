@@ -221,5 +221,61 @@ public class ProductService : IProductService
         return new BaseResponse<string>("Product added to favourites", true, HttpStatusCode.Created);
     }
 
+    public async Task<BaseResponse<List<ProductGetDto>>> GetFilteredProductsAsync(ProductFilterParams filter)
+    {
+        var query = _productRepository.GetAll(isTracking: false)
+            .Include(p => p.ProductImages)
+            .AsQueryable();
+
+        if (filter.CategoryId.HasValue)
+            query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
+
+        if (filter.MinPrice.HasValue)
+            query = query.Where(p => p.Price >= filter.MinPrice.Value);
+
+        if (filter.MaxPrice.HasValue)
+            query = query.Where(p => p.Price <= filter.MaxPrice.Value);
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var search = filter.Search.ToLower();
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(search) ||
+                p.Description.ToLower().Contains(search));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.SortBy))
+        {
+            bool isDescending = filter.SortDirection?.ToLower() == "desc";
+
+            switch (filter.SortBy.ToLower())
+            {
+                case "price":
+                    query = isDescending ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price);
+                    break;
+                case "name":
+                    query = isDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name);
+                    break;
+                case "createddate":
+                    query = isDescending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt);
+                    break;
+                default:
+                    query = query.OrderByDescending(p => p.CreatedAt); // fallback sort
+                    break;
+            }
+        }
+        else
+        {
+            query = query.OrderByDescending(p => p.CreatedAt); // default sort if no sortBy
+        }
+
+
+        var products = await query.ToListAsync();
+        var mapped = _mapper.Map<List<ProductGetDto>>(products);
+
+        return new BaseResponse<List<ProductGetDto>>(mapped, true, HttpStatusCode.OK);
+    }
+
+
 }
 

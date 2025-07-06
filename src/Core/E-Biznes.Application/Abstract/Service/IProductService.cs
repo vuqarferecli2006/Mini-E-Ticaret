@@ -14,4 +14,5 @@ public interface IProductService
     Task<BaseResponse<string>> DeleteProductImageAsync(Guid imageId);
     Task<BaseResponse<string>> AddProductImageAsync(Guid productId, IFormFile file);
     Task<BaseResponse<string>> AddProductFavouriteAsync(Guid productId);
+    Task<BaseResponse<List<ProductGetDto>>> GetFilteredProductsAsync(ProductFilterParams filter);
 }

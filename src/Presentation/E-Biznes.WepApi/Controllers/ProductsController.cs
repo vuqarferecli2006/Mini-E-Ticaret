@@ -83,5 +83,15 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.AddProductFavouriteAsync(productId);
             return StatusCode((int)result.StatusCode, result);
         }
+
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetFiltered([FromQuery] ProductFilterParams filter)
+        {
+            var result = await _productService.GetFilteredProductsAsync(filter);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 }
