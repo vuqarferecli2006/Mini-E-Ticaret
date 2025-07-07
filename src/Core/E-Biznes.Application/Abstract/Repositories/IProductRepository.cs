@@ -19,4 +19,10 @@ public interface IProductRepository : IRepository<Product>
     public Task<bool> IsProductFavouriteAsync(Guid productId, string userId);
 
     public Task AddFavouriteAsync(Favourite favourite);
+
+    Task RemoveFavouriteAsync(Favourite favourite);
+
+    Task<Favourite?> GetFavouriteAsync(Guid productId, string userId);
+
+    Task<List<Favourite>> GetFavouritesByUserAsync(string userId);
 }

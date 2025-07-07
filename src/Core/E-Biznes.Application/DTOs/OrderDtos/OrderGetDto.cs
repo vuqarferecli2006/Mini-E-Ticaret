@@ -2,11 +2,10 @@
 
 namespace E_Biznes.Application.DTOs.OrderDtos;
 
-public class OrderGetDto
+public record OrderGetDto
 {
     public Guid Id { get; set; }
-    public DateTime OrderDate { get; set; }
-    public OrderStatus Status { get; set; }
     public decimal TotalPrice { get; set; }
+    public string? UserName { get; set; }
     public List<OrderProductDto> OrderProducts { get; set; } = new();
 }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace E_Biznes.Application.DTOs.ProducDtos;
 
-public class ProductUpdateWithImagesDto
+public record ProductUpdateWithImagesDto
 {
     public Guid ProductId { get; set; }
     public string Name { get; set; } = string.Empty;

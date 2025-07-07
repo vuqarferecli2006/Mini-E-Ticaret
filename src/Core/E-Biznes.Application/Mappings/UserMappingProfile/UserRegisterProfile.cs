@@ -26,5 +26,8 @@ public class UserRegisterProfile: Profile
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
         CreateMap<AppUser, UserGetDto>();
         CreateMap<Order, OrderDto>();
+        CreateMap<OrderProduct, OrderProductDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+
     }
 }

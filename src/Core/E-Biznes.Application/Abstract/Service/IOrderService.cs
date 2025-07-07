@@ -10,4 +10,5 @@ public interface IOrderService
     Task<BaseResponse<List<OrderGetDto>>> GetMySalesAsync();
     Task<BaseResponse<OrderGetDto>> GetOrderDetailAsync(Guid orderId);
     Task<BaseResponse<OrderEmailDetailsDto>> SendOrderEmail(string token, string userId, Guid productId, int quantity, decimal total);
+    Task<BaseResponse<string>> DeleteOrderAsync(Guid orderId);
 }

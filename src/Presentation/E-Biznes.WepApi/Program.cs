@@ -1,6 +1,7 @@
 using E_Biznes.Application.Shared.Helpers;
 using E_Biznes.Application.Shared.Settings;
 using E_Biznes.Application.Validations.CategoryValidations;
+using E_Biznes.Application.Validations.UserValidations;
 using E_Biznes.Domain.Entities;
 using E_Biznes.Persistance;
 using E_Biznes.Persistance.Contexts;
@@ -23,7 +24,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
-builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
 builder.Services.AddAutoMapper(typeof(CategoryProfile).Assembly);
 builder.Services.AddSwaggerGen(c =>
 {

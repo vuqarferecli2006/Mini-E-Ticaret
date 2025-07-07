@@ -4,6 +4,7 @@ using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs.OrderDtos;
 using E_Biznes.Application.Shared;
 using E_Biznes.Domain.Entities;
+using E_Biznes.Persistance.Contexts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,8 @@ public class OrderService : IOrderService
     private readonly UserManager<AppUser> _userManager;
     private readonly IEmailService _mailService;
     private readonly IMapper _mapper;
+    private readonly AppDbContext _dbcontext;
+
 
 
     public OrderService(IHttpContextAccessor contextAccessor, 
@@ -30,7 +33,8 @@ public class OrderService : IOrderService
                         IProductRepository productRepository, 
                         IMapper mapper, 
                         UserManager<AppUser> userManager, 
-                        IEmailService mailService)
+                        IEmailService mailService,
+                        AppDbContext dbContext)
     {
         _contextAccessor = contextAccessor;
         _orderRepository = orderRepository;
@@ -38,6 +42,7 @@ public class OrderService : IOrderService
         _mapper = mapper;
         _userManager = userManager;
         _mailService = mailService;
+        _dbcontext = dbContext;
     }
 
     public async Task<BaseResponse<string>> CreateOrderAsync(CreateOrderDto dto)
@@ -82,6 +87,47 @@ public class OrderService : IOrderService
         return new("Order created,Send order to email", true, HttpStatusCode.Created);
     }
 
+    public async Task<BaseResponse<string>> DeleteOrderAsync(Guid orderId)
+    {
+        var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(userId))
+            return new("Unauthorized", false, HttpStatusCode.Unauthorized);
+
+        var order = await _dbcontext.Orders
+            .Include(o => o.OrderProducts)
+            .ThenInclude(op => op.Product)
+            .FirstOrDefaultAsync(o => o.Id == orderId && !o.IsDeleted); // yalnız silinməmiş order-ləri yoxla
+
+        if (order is null)
+            return new("Order not found", false, HttpStatusCode.NotFound);
+
+        var isOwner = order.OrderProducts.All(op => op.Product.UserId == userId);
+
+        if (!isOwner)
+            return new("You are not authorized to delete this order", false, HttpStatusCode.Forbidden);
+
+        // Stokları geri artır
+        foreach (var op in order.OrderProducts)
+        {
+            var product = op.Product;
+            if (product is not null)
+            {
+                product.Stock += op.Quantity;
+                _productRepository.Update(product);
+            }
+        }
+
+        // Soft delete
+        order.IsDeleted = true;
+        order.UpdatedAt = DateTime.UtcNow;
+        _orderRepository.Update(order);
+        await _orderRepository.SaveChangeAsync();
+
+        return new("Order deleted successfully", true, HttpStatusCode.OK);
+    }
+
+
     public async Task<BaseResponse<List<OrderGetDto>>> GetMyOrdersAsync()
     {
         var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -91,11 +137,12 @@ public class OrderService : IOrderService
         var orders = _orderRepository.GetAll(true)
                         .Include(o => o.OrderProducts)
                         .ThenInclude(op => op.Product)
-                        .Where(o => o.UserId == userId);
+                        .Where(o => o.UserId == userId && !o.IsDeleted); // <-- Soft delete filter
 
         var list = _mapper.Map<List<OrderGetDto>>(await orders.ToListAsync());
         return new(list, true, HttpStatusCode.OK);
     }
+
 
     public async Task<BaseResponse<List<OrderGetDto>>> GetMySalesAsync()
     {
@@ -104,13 +151,15 @@ public class OrderService : IOrderService
             return new("User Not Found", false, HttpStatusCode.Unauthorized);
 
         var orders = _orderRepository.GetAll(true)
+            .Include(o => o.User)
             .Include(o => o.OrderProducts)
             .ThenInclude(op => op.Product)
-            .Where(o => o.OrderProducts.Any(op => op.Product != null && op.Product.UserId == userId));
+            .Where(o => !o.IsDeleted && o.OrderProducts.Any(op => op.Product != null && op.Product.UserId == userId)); // <-- Soft delete filter
 
         var result = _mapper.Map<List<OrderGetDto>>(await orders.ToListAsync());
         return new(result, true, HttpStatusCode.OK);
     }
+
 
     public async Task<BaseResponse<OrderGetDto>> GetOrderDetailAsync(Guid orderId)
     {
@@ -121,7 +170,7 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetAll(isTracking: true)
             .Include(o => o.OrderProducts)
                 .ThenInclude(op => op.Product)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
+            .FirstOrDefaultAsync(o => o.Id == orderId && !o.IsDeleted); // <-- Soft delete filter
 
         if (order == null || (order.UserId != userId &&
             !order.OrderProducts.Any(op => op.Product != null && op.Product.UserId == userId)))

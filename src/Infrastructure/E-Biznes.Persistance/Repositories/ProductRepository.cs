@@ -26,7 +26,9 @@ public class ProductRepository : Repository<Product>, IProductRepository
     public override async Task<Product?> GetByIdAsync(Guid id)
     {
         return await _context.Products
-            .Include(p => p.ProductImages)  // Şəkilləri yüklə
+            .Include(p => p.ProductImages)
+            .Include(p=>p.Reviews)
+                .ThenInclude(r=>r.User)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
@@ -49,6 +51,24 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         await _context.Favourites.AddAsync(favourite);
         await _context.SaveChangesAsync();
+    }
+    public async Task RemoveFavouriteAsync(Favourite favourite)
+    {
+        _context.Favourites.Remove(favourite);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<Favourite?> GetFavouriteAsync(Guid productId, string userId)
+    {
+        return await _context.Favourites
+            .FirstOrDefaultAsync(f => f.ProductId == productId && f.UserId == userId);
+    }
+    public async Task<List<Favourite>> GetFavouritesByUserAsync(string userId)
+    {
+        return await _context.Favourites
+            .Include(f => f.Product)   // Məhsul məlumatını da gətir
+            .Where(f => f.UserId == userId)
+            .ToListAsync();
     }
 
 }

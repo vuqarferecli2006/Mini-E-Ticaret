@@ -1,6 +1,6 @@
 ﻿namespace AzBinaTeam.Application.DTOs.UserDtos;
 
-public class UserResetPasswordDto
+public record UserResetPasswordDto
 {
     public string Email { get; set; } = null!;
 

@@ -7,5 +7,9 @@ public interface IRoleService
 {
     Task<BaseResponse<string?>> CreateRoleAsync(RoleCreateDto dto);
 
+    Task<BaseResponse<string>> DeleteRoleAsync(string id);
+
     Task<BaseResponse<string?>> UpdateRoleAsync(string roleId, RoleCreateDto dto);
+
+    Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, IEnumerable<string> permissions);
 }

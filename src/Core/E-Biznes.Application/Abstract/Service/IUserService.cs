@@ -1,4 +1,5 @@
 ﻿using AzBinaTeam.Application.DTOs.UserDtos;
+using E_Biznes.Application.DTOs.AccountsDto;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
 
@@ -22,5 +23,5 @@ public interface IUserService
 
     Task<BaseResponse<List<UserGetDto>>> GetAllAsync();
 
-    Task<BaseResponse<UserGetDto>> GetByIdAsync(string id);
+    Task<BaseResponse<UserProfileDto>> GetCurrentUserProfileAsync();
 }

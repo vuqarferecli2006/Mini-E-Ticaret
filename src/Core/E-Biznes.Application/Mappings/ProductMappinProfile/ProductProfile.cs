@@ -20,8 +20,11 @@ public class ProductProfile : Profile
             .ForMember(dest => dest.UserId, opt => opt.Ignore());
 
         CreateMap<Product, ProductGetDto>()
-            .ForMember(dest => dest.Condition, opt => opt.MapFrom(src => src.Condition.ToString()))
-            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.ProductImages));
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.ProductImages))
+            .ForMember(dest => dest.AverageRating, opt =>
+                opt.MapFrom(src => src.Reviews.Any() ? Math.Round(src.Reviews.Average(r => (int)r.Rating), 2) : 0))
+            .ForMember(dest => dest.Reviews, opt => opt.MapFrom(src => src.Reviews));
 
         CreateMap<Image, ImageDto>();
 

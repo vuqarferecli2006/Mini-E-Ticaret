@@ -17,12 +17,13 @@ public static class ServiceRegistration
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
 
         #endregion
 
         #region Services
 
-        services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<RoleCreationHelper>();
@@ -32,6 +33,7 @@ public static class ServiceRegistration
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IFileServices, FileUploadService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IReviewService, ReviewService>();
 
 
         #endregion

@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs.AccountsDto;
+using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
 using E_Biznes.Domain.Entities;
 using E_Biznes.Domain.Enum;
 using E_Biznes.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text;
 using System.Web;
@@ -78,6 +80,22 @@ public class AccountService : IAccountService
 
         return new("User registered successfully", true, HttpStatusCode.OK);
     }
+
+    public async Task<BaseResponse<UserGetDto>> GetByIdAsync(AccountGetDto dto)
+    {
+        var user = await _userManager.Users
+            .Include(u => u.Orders) // Orders navigation property varsa
+            .FirstOrDefaultAsync(u => u.Id == dto.Id);
+        if (user is null)
+        {
+            return new("User not found", false, HttpStatusCode.NotFound);
+        }
+        var userDto = _mapper.Map<UserGetDto>(user);
+        var roles = await _userManager.GetRolesAsync(user);
+        userDto.Roles = roles.ToList();
+        return new BaseResponse<UserGetDto>(userDto, true, HttpStatusCode.OK);
+    }
+
     private async Task<string> GetEmailConfirm(AppUser user)
     {
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);

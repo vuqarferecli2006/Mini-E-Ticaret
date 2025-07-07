@@ -48,9 +48,9 @@ namespace E_Biznes.WepApi.Controllers
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> GetById([FromQuery] string id)
+        public async Task<IActionResult> GetById([FromQuery] AccountGetDto dto)
         {
-            var result = await _userService.GetByIdAsync(id);
+            var result = await _accountService.GetByIdAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
     }

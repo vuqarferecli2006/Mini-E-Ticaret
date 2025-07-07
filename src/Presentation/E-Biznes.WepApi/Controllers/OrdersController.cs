@@ -20,6 +20,7 @@ namespace E_Biznes.WepApi.Controllers
             _orderService = orderService;
         }
         [HttpPost]
+        [Authorize(Policy = Permission.Order.Create)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -31,6 +32,7 @@ namespace E_Biznes.WepApi.Controllers
 
         // GET: /api/orders/my
         [HttpGet]
+        [Authorize(Policy = Permission.Order.GetMy)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -42,6 +44,7 @@ namespace E_Biznes.WepApi.Controllers
 
         // GET: /api/orders/my-sales
         [HttpGet]
+        [Authorize(Policy = Permission.Order.GetMySales)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -53,6 +56,7 @@ namespace E_Biznes.WepApi.Controllers
 
         // GET: /api/orders/{id}
         [HttpGet]
+        [Authorize(Policy = Permission.Order.GetDetail)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -62,6 +66,7 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
         [HttpGet]
+        [ApiExplorerSettings(IgnoreApi = true)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -76,6 +81,17 @@ namespace E_Biznes.WepApi.Controllers
                 return BadRequest("TotalPrice format is incorrect");
             var result=await _orderService.SendOrderEmail(token, userId, productId, quantity, totalPrice);
             return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpDelete]
+        [Authorize(Policy = Permission.Order.Delete)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> DeleteOrderAsync(Guid orderId)
+        {
+            var result=await _orderService.DeleteOrderAsync(orderId);
+            return StatusCode((int)result.StatusCode,result);
         }
     }
 }

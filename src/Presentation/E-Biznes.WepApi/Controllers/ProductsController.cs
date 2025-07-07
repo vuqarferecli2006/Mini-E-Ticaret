@@ -1,6 +1,7 @@
 ﻿using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs.ProducDtos;
 using E_Biznes.Application.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -20,6 +21,7 @@ namespace E_Biznes.WepApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = Permission.Product.Create)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -28,44 +30,8 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.CreateWithImagesAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
-        [HttpPut]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> UpdateProductWithImages([FromForm] ProductUpdateWithImagesDto dto)
-        {
-            var result = await _productService.UpdateWithImagesAsync(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
-        [HttpDelete]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> DeleteProductWithImages([FromQuery] Guid id)
-        {
-            var result = await _productService.DeleteAsync(id);
-            return StatusCode((int)result.StatusCode, result);
-        }
-        [HttpGet]
-        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> GetMyProducts()
-        {
-            var result = await _productService.GetMyProductsAsync();
-            return StatusCode((int)result.StatusCode, result);
-        }
-        [HttpDelete]
-        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> DeleteProductImage([FromQuery] Guid imageId)
-        {
-            var result = await _productService.DeleteProductImageAsync(imageId);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
         [HttpPost]
+        [Authorize(Policy = Permission.Product.AddProductImage)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -75,6 +41,7 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)result.StatusCode, result);
         }
         [HttpPost]
+        [Authorize(Policy = Permission.Product.AddProductFavourite)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -83,7 +50,27 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.AddProductFavouriteAsync(productId);
             return StatusCode((int)result.StatusCode, result);
         }
-
+        [HttpPut]
+        [Authorize(Policy = Permission.Product.Update)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> UpdateProductWithImages([FromForm] ProductUpdateWithImagesDto dto)
+        {
+            var result = await _productService.UpdateWithImagesAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        
+        [HttpGet]
+        [Authorize(Policy = Permission.Product.GetMy)]
+        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetMyProducts()
+        {
+            var result = await _productService.GetMyProductsAsync();
+            return StatusCode((int)result.StatusCode, result);
+        }
         [HttpGet]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
@@ -91,6 +78,57 @@ namespace E_Biznes.WepApi.Controllers
         public async Task<IActionResult> GetFiltered([FromQuery] ProductFilterParams filter)
         {
             var result = await _productService.GetFilteredProductsAsync(filter);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpGet]
+        [Authorize(Policy = Permission.Product.GetAllFavourite)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAllFavouriteAsync()
+        {
+            var result = await _productService.GetAllFavouritesAsync();
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpDelete]
+        [Authorize(Policy = Permission.Product.DeleteProductImage)]
+        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> DeleteProductImage([FromQuery] Guid imageId)
+        {
+            var result = await _productService.DeleteImageAsync(imageId);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        
+        [HttpDelete]
+        [Authorize(Policy = Permission.Product.Deletefavourite)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> DeleteFavouriteAscync(Guid id)
+        {
+            var result = await _productService.DeleteProductFavouriteAsync(id);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpDelete]
+        [Authorize(Policy = Permission.Product.Delete)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> DeleteProduct([FromQuery] Guid id)
+        {
+            var result = await _productService.DeleteAsync(id);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpGet]
+        [Authorize(Policy = Permission.Product.GetAll)]
+        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAllAsync()
+        {
+            var result = await _productService.GetAllAsync();
             return StatusCode((int)result.StatusCode, result);
         }
     }

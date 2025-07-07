@@ -65,4 +65,62 @@ public class RoleService : IRoleService
         return new BaseResponse<string?>("Role updated successfully", true, HttpStatusCode.OK);
     }
 
+    public async Task<BaseResponse<string>> DeleteRoleAsync(string id)
+    {
+        var role = await _roleManager.FindByIdAsync(id);
+        if (role is null)
+        {
+            return new BaseResponse<string>("Role not found", false, HttpStatusCode.NotFound);
+        }
+
+        var result = await _roleManager.DeleteAsync(role);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return new BaseResponse<string>($"Failed to delete role: {errors}", false, HttpStatusCode.BadRequest);
+        }
+
+        return new BaseResponse<string>("Role deleted successfully", true, HttpStatusCode.OK);
+    }
+
+
+    public async Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, IEnumerable<string> permissions)
+    {
+        var role = await _roleManager.FindByIdAsync(roleId);
+        if (role is null)
+            return new("Role not found", false, HttpStatusCode.NotFound);
+
+        var existingClaims = await _roleManager.GetClaimsAsync(role);
+        var existingPermissionClaims = existingClaims.Where(c => c.Type == "Permission").ToList();
+
+        // Yoxla ki, bütün daxil olan permission-lar rolda var
+        var notFoundPermissions = permissions
+            .Where(p => !existingPermissionClaims.Any(ec => ec.Value == p))
+            .ToList();
+
+        if (notFoundPermissions.Any())
+        {
+            var joined = string.Join(", ", notFoundPermissions);
+            return new($"The following permissions were not found on this role: {joined}", false, HttpStatusCode.BadRequest);
+        }
+
+        // Əgər hamısı varsa - sil
+        foreach (var permission in permissions)
+        {
+            var claimToRemove = existingPermissionClaims.First(c => c.Value == permission);
+            var result = await _roleManager.RemoveClaimAsync(role, claimToRemove);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return new($"Failed to remove permission '{permission}': {errors}", false, HttpStatusCode.BadRequest);
+            }
+        }
+
+        return new("Selected permissions removed successfully", true, HttpStatusCode.OK);
+    }
+
+
+
+
 }

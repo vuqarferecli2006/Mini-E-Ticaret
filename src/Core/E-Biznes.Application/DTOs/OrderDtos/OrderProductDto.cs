@@ -1,6 +1,6 @@
 ﻿namespace E_Biznes.Application.DTOs.OrderDtos;
 
-public class OrderProductDto
+public record OrderProductDto
 {
     public Guid ProductId { get; set; }
     

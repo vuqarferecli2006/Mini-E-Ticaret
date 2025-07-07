@@ -2,10 +2,12 @@
 using E_Biznes.Application.Abstract.Repositories;
 using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs;
+using E_Biznes.Application.DTOs.FavouriteDto;
 using E_Biznes.Application.DTOs.ProducDtos;
 using E_Biznes.Application.Shared;
 using E_Biznes.Domain.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Net;
@@ -16,18 +18,20 @@ namespace E_Biznes.Persistance.Services;
 public class ProductService : IProductService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserManager<AppUser> _userManager;
     private readonly IProductRepository _productRepository;
     private readonly IMapper _mapper;
     private readonly IFileServices _fileService;
 
-    public ProductService(IHttpContextAccessor httpContextAccessor, IProductRepository productRepository, IMapper mapper, IFileServices fileServices)
+    public ProductService(IHttpContextAccessor httpContextAccessor, IProductRepository productRepository, IMapper mapper, IFileServices fileServices, UserManager<AppUser> userManager)
     {
         _httpContextAccessor = httpContextAccessor;
         _productRepository = productRepository;
         _mapper = mapper;
         _fileService = fileServices;
+        _userManager = userManager;
     }
-        
+
     public async Task<BaseResponse<string>> CreateWithImagesAsync(ProductCreateWithImagesDto dto)
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -116,7 +120,7 @@ public class ProductService : IProductService
 
         return new BaseResponse<string>("Product updated successfully", true, HttpStatusCode.OK);
     }
-   
+
     public async Task<BaseResponse<string>> DeleteAsync(Guid productId)
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -142,16 +146,23 @@ public class ProductService : IProductService
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<List<ProductGetDto>>("Unauthorized", false, HttpStatusCode.Unauthorized);
+            return new BaseResponse<List<ProductGetDto>>("User not found", false, HttpStatusCode.Unauthorized);
 
-        var products = _productRepository.GetByFiltered(p => p.UserId == userId, new Expression<Func<Product, object>>[] { p => p.ProductImages }, isTracking: false);
+        var products = await _productRepository.GetAll(isTracking: false)
+            .Where(p => p.UserId == userId)
+            .Include(p => p.ProductImages)
+            .Include(p => p.Reviews)
+                .ThenInclude(r => r.User)
+            .ToListAsync();
 
-        var productDtos = _mapper.Map<List<ProductGetDto>>(await products.ToListAsync());
+        var productDtos = _mapper.Map<List<ProductGetDto>>(products);
+
+        // Burada artıq productDtos içində Reviews içində UserFullName doludur
 
         return new BaseResponse<List<ProductGetDto>>(productDtos, true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<string>> DeleteProductImageAsync(Guid imageId)
+    public async Task<BaseResponse<string>> DeleteImageAsync(Guid imageId)
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
@@ -221,10 +232,46 @@ public class ProductService : IProductService
         return new BaseResponse<string>("Product added to favourites", true, HttpStatusCode.Created);
     }
 
+    public async Task<BaseResponse<string>> DeleteProductFavouriteAsync(Guid productId)
+    {
+        var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
+
+        var favourite = await _productRepository.GetFavouriteAsync(productId, userId);
+        if (favourite == null)
+            return new BaseResponse<string>("Favourite not found", false, HttpStatusCode.NotFound);
+
+        await _productRepository.RemoveFavouriteAsync(favourite);
+
+        return new BaseResponse<string>("Product removed from favourites", true, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<List<FavouriteDto>>> GetAllFavouritesAsync()
+    {
+        var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return new BaseResponse<List<FavouriteDto>>("Unauthorized", false, HttpStatusCode.Unauthorized);
+
+        // Burada repository metodunu çağırırıq
+        var favourites = await _productRepository.GetFavouritesByUserAsync(userId);
+
+        // Mapping (manual)
+        var favouriteDtos = favourites.Select(f => new FavouriteDto
+        {
+            ProductId = f.ProductId,
+            ProductName = f.Product.Name,
+        }).ToList();
+
+        return new BaseResponse<List<FavouriteDto>>(favouriteDtos, true, HttpStatusCode.OK);
+    }
+
     public async Task<BaseResponse<List<ProductGetDto>>> GetFilteredProductsAsync(ProductFilterParams filter)
     {
         var query = _productRepository.GetAll(isTracking: false)
             .Include(p => p.ProductImages)
+            .Include(p => p.Reviews)
+                .ThenInclude(r => r.User)
             .AsQueryable();
 
         if (filter.CategoryId.HasValue)
@@ -235,6 +282,20 @@ public class ProductService : IProductService
 
         if (filter.MaxPrice.HasValue)
             query = query.Where(p => p.Price <= filter.MaxPrice.Value);
+
+        if (filter.MinRating != 0)
+        {
+            query = query.Where(p =>
+                p.Reviews.Any() &&
+                p.Reviews.Average(r => (int)r.Rating) >= (int)filter.MinRating);
+        }
+
+        if (filter.MaxRating != 0)
+        {
+            query = query.Where(p =>
+                p.Reviews.Any() &&
+                p.Reviews.Average(r => (int)r.Rating) <= (int)filter.MaxRating);
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -259,16 +320,20 @@ public class ProductService : IProductService
                 case "createddate":
                     query = isDescending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt);
                     break;
+                case "rating":
+                    query = isDescending
+                        ? query.OrderByDescending(p => p.Reviews.Any() ? p.Reviews.Average(r => (int)r.Rating) : 0)
+                        : query.OrderBy(p => p.Reviews.Any() ? p.Reviews.Average(r => (int)r.Rating) : 0);
+                    break;
                 default:
-                    query = query.OrderByDescending(p => p.CreatedAt); // fallback sort
+                    query = query.OrderByDescending(p => p.CreatedAt);
                     break;
             }
         }
         else
         {
-            query = query.OrderByDescending(p => p.CreatedAt); // default sort if no sortBy
+            query = query.OrderBy(p => p.CreatedAt);
         }
-
 
         var products = await query.ToListAsync();
         var mapped = _mapper.Map<List<ProductGetDto>>(products);
@@ -276,6 +341,33 @@ public class ProductService : IProductService
         return new BaseResponse<List<ProductGetDto>>(mapped, true, HttpStatusCode.OK);
     }
 
+    public async Task<BaseResponse<List<ProductGetDto>>> GetAllAsync()
+    {
+        var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return new("Unauthorized", false, HttpStatusCode.Unauthorized);
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return new("User not found", false, HttpStatusCode.NotFound);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault()?.ToLower();
+
+        // 🟢 Heç bir filter tətbiq etmə
+        IQueryable<Product> query = _productRepository.GetAll(isTracking: false)
+            .Include(p => p.Category)
+            .Include(p => p.ProductImages)
+            .Include(p => p.Reviews)
+                .ThenInclude(r => r.User);
+
+        // Burada seller və buyer fərq etmədən bütün məhsullar gəlir
+        // Əgər gələcəkdə adminə xüsusi filter yazmaq istəsən, bura əlavə edə bilərsən
+
+        var products = await query.ToListAsync();
+        var productDtos = _mapper.Map<List<ProductGetDto>>(products);
+
+        return new("All products", productDtos, true, HttpStatusCode.OK);
+    }
 
 }
-
