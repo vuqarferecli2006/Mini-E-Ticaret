@@ -131,7 +131,7 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)result.StatusCode, result);
         }
         [HttpDelete]
-        [Authorize(Policy = Permission.Product.Deletefavourite)]
+        [Authorize(Policy = Permission.Product.DeleteFavourite)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]

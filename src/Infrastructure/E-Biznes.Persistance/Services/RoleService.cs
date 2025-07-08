@@ -41,9 +41,11 @@ public class RoleService : IRoleService
         return new BaseResponse<string?>("Role created successfully", true, HttpStatusCode.OK);
     }
 
-
     public async Task<BaseResponse<string?>> UpdateRoleAsync(string roleId, RoleCreateDto dto)
     {
+        if (roleId is null)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var existRole = await _roleManager.FindByIdAsync(roleId);
         if (existRole is null)
         {
@@ -67,6 +69,9 @@ public class RoleService : IRoleService
 
     public async Task<BaseResponse<string>> DeleteRoleAsync(string id)
     {
+        if (id is null)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var role = await _roleManager.FindByIdAsync(id);
         if (role is null)
         {
@@ -85,6 +90,9 @@ public class RoleService : IRoleService
 
     public async Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, IEnumerable<string> permissions)
     {
+        if (roleId is null)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var role = await _roleManager.FindByIdAsync(roleId);
         if (role is null)
             return new("Role not found", false, HttpStatusCode.NotFound);

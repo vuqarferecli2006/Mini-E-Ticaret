@@ -64,7 +64,7 @@ public static class Permission
         public const string AddProductImage = "Product.AddImage";
         public const string AddProductFavourite = "Product.AddFavourite";
         public const string GetAllFavourite = "Product.GetAllFavourite";
-        public const string Deletefavourite = "Product.DeleteFavourite";
+        public const string DeleteFavourite = "Product.DeleteFavourite";
         public const string AddProductDisCount = "Product.AddDisCount";
         public const string CancelProductDisCount = "Product.CancelDisCount";
 
@@ -78,7 +78,7 @@ public static class Permission
             AddProductImage,
             AddProductFavourite,
             GetAllFavourite,
-            Deletefavourite,
+            DeleteFavourite,
             GetAll,
             AddProductDisCount,
             CancelProductDisCount

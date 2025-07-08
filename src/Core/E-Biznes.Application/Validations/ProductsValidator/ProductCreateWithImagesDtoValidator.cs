@@ -15,6 +15,7 @@ public class ProductCreateWithImagesDtoValidator : AbstractValidator<ProductCrea
             .MaximumLength(1000).WithMessage("Description must be at most 1000 characters.");
 
         RuleFor(x => x.Price)
+            .NotEmpty().WithMessage("Product price is required.")
             .GreaterThan(0).WithMessage("Price must be greater than 0.");
 
         RuleFor(x => x.CategoryId)
@@ -24,6 +25,7 @@ public class ProductCreateWithImagesDtoValidator : AbstractValidator<ProductCrea
             .IsInEnum().WithMessage("Invalid product condition.");
 
         RuleFor(x => x.Stock)
+            .NotEmpty().WithMessage("Product Stock count is required.")
             .GreaterThanOrEqualTo(0).WithMessage("Stock cannot be negative.");
 
         RuleFor(x => x.Images)

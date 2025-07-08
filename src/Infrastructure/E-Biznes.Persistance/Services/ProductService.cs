@@ -120,8 +120,11 @@ public class ProductService : IProductService
         return new BaseResponse<string>("Product updated successfully", true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<string>> DeleteAsync(Guid productId)
+    public async Task<BaseResponse<string>> DeleteAsync(Guid productId) 
     {
+        if (productId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new BaseResponse<string>("User Not Found", false, HttpStatusCode.Unauthorized);
@@ -155,11 +158,6 @@ public class ProductService : IProductService
 
         if (product.UserId != userId)
             return new("Access denied: You are not the owner of this product", false, HttpStatusCode.Forbidden);
-
-        // Endirim 100-dən böyük və ya 0-dan kiçik ola bilməz
-        if (disCount < 0 || disCount > 100)
-            return new("Invalid discount percentage", false, HttpStatusCode.BadRequest);
-
         // Endirim faizini təyin et
         product.DiscountPercent = disCount;
 
@@ -172,6 +170,9 @@ public class ProductService : IProductService
 
     public async Task<BaseResponse<ProductGetDto>> CancelProductDisCount(Guid productId)
     {
+        if (productId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new("Unauthorized", false, HttpStatusCode.Unauthorized);
@@ -216,6 +217,9 @@ public class ProductService : IProductService
 
     public async Task<BaseResponse<string>> DeleteImageAsync(Guid imageId)
     {
+        if (imageId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+        
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
@@ -264,6 +268,9 @@ public class ProductService : IProductService
 
     public async Task<BaseResponse<string>> AddProductFavouriteAsync(Guid productId)
     {
+        if (productId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
@@ -331,38 +338,35 @@ public class ProductService : IProductService
             .Include(p => p.ProductImages)
             .Include(p => p.Reviews)
                 .ThenInclude(r => r.User)
-             .Where(predicate: p => !p.IsDeleted) // Silinmiş məhsulları istisna edirik
+            .Where(p => !p.IsDeleted)
+            .Select(p => new
+            {
+                Product = p,
+                AverageRating = p.Reviews.Any() ? p.Reviews.Average(r => (int)r.Rating) : 0
+            })
             .AsQueryable();
 
         if (filter.CategoryId.HasValue)
-            query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
+            query = query.Where(x => x.Product.CategoryId == filter.CategoryId.Value);
 
         if (filter.MinPrice.HasValue)
-            query = query.Where(p => p.Price >= filter.MinPrice.Value);
+            query = query.Where(x => x.Product.Price >= filter.MinPrice.Value);
 
         if (filter.MaxPrice.HasValue)
-            query = query.Where(p => p.Price <= filter.MaxPrice.Value);
+            query = query.Where(x => x.Product.Price <= filter.MaxPrice.Value);
 
         if (filter.MinRating != 0)
-        {
-            query = query.Where(p =>
-                p.Reviews.Any() &&
-                p.Reviews.Average(r => (int)r.Rating) >= (int)filter.MinRating);
-        }
+            query = query.Where(x => x.AverageRating >= (int)filter.MinRating);
 
         if (filter.MaxRating != 0)
-        {
-            query = query.Where(p =>
-                p.Reviews.Any() &&
-                p.Reviews.Average(r => (int)r.Rating) <= (int)filter.MaxRating);
-        }
+            query = query.Where(x => x.AverageRating <= (int)filter.MaxRating);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var search = filter.Search.ToLower();
-            query = query.Where(p =>
-                p.Name.ToLower().Contains(search) ||
-                p.Description.ToLower().Contains(search));
+            query = query.Where(x =>
+                x.Product.Name.ToLower().Contains(search) ||
+                x.Product.Description.ToLower().Contains(search));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.SortBy))
@@ -372,30 +376,36 @@ public class ProductService : IProductService
             switch (filter.SortBy.ToLower())
             {
                 case "price":
-                    query = isDescending ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price);
+                    query = isDescending
+                        ? query.OrderByDescending(x => x.Product.Price)
+                        : query.OrderBy(x => x.Product.Price);
                     break;
                 case "name":
-                    query = isDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name);
+                    query = isDescending
+                        ? query.OrderByDescending(x => x.Product.Name)
+                        : query.OrderBy(x => x.Product.Name);
                     break;
                 case "createddate":
-                    query = isDescending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt);
+                    query = isDescending
+                        ? query.OrderByDescending(x => x.Product.CreatedAt)
+                        : query.OrderBy(x => x.Product.CreatedAt);
                     break;
                 case "rating":
                     query = isDescending
-                        ? query.OrderByDescending(p => p.Reviews.Any() ? p.Reviews.Average(r => (int)r.Rating) : 0)
-                        : query.OrderBy(p => p.Reviews.Any() ? p.Reviews.Average(r => (int)r.Rating) : 0);
+                        ? query.OrderByDescending(x => x.AverageRating)
+                        : query.OrderBy(x => x.AverageRating);
                     break;
                 default:
-                    query = query.OrderByDescending(p => p.CreatedAt);
+                    query = query.OrderByDescending(x => x.Product.CreatedAt);
                     break;
             }
         }
         else
         {
-            query = query.OrderBy(p => p.CreatedAt);
+            query = query.OrderBy(x => x.Product.CreatedAt);
         }
 
-        var products = await query.ToListAsync();
+        var products = await query.Select(x => x.Product).ToListAsync();
         var mapped = _mapper.Map<List<ProductGetDto>>(products);
 
         return new BaseResponse<List<ProductGetDto>>(mapped, true, HttpStatusCode.OK);

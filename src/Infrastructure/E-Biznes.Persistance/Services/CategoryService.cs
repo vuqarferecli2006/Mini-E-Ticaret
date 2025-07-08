@@ -77,6 +77,9 @@ public class CategoryService : ICategoryService
 
     public async Task<BaseResponse<CategoryMainGetDto>> GetByIdAsync(Guid id)
     {
+        if (id == Guid.Empty)
+            return new("Id mustn't be empty",HttpStatusCode.BadRequest);
+
         var category = await _categoryRepository
             .GetByFiltered(c => c.Id == id && c.ParentCategoryId == null)
             .Include(c => c.SubCategories.Where(sc=>!sc.IsDeleted))

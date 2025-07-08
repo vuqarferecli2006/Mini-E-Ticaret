@@ -36,6 +36,8 @@ public class ReviewService : IReviewService
 
     public async Task<BaseResponse<string>> CreateReviewAsync(Guid productId, ReviewCreateDto dto)
     {
+        if (productId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
         var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new("Unauthorized", false, HttpStatusCode.Unauthorized);
@@ -61,6 +63,8 @@ public class ReviewService : IReviewService
 
     public async Task<BaseResponse<string>> DeleteAsync(Guid id)
     {
+        if (id == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
         var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new("Unauthorized", false, HttpStatusCode.Unauthorized);
@@ -81,6 +85,9 @@ public class ReviewService : IReviewService
 
     public async Task<BaseResponse<List<ReviewGetDto>>> GetReviewByProductIdAsync(Guid productId)
     {
+        if (productId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var product = await _productRepository.GetByIdAsync(productId);
         if (product is null)
             return new("Product not found", false, HttpStatusCode.NotFound);
@@ -99,6 +106,9 @@ public class ReviewService : IReviewService
 
     public async Task<BaseResponse<List<ReviewUserGetDto>>> GetReviewsByUserIdAsync(string userId)
     {
+        if (userId is null)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
         if (!userExists)
             return new BaseResponse<List<ReviewUserGetDto>>("User not found", false, HttpStatusCode.NotFound);

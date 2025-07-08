@@ -100,6 +100,9 @@ public class OrderService : IOrderService
 
     public async Task<BaseResponse<string>> CancelAndNotifyOrderAsync(Guid orderId)
     {
+        if(orderId==Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var order = await _orderRepository
             .GetAll(isTracking: true)
             .Where(o => o.Id == orderId)
@@ -177,6 +180,9 @@ public class OrderService : IOrderService
 
     public async Task<BaseResponse<OrderGetDto>> GetOrderDetailAsync(Guid orderId)
     {
+        if (orderId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
         var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new("User Not Found", false, HttpStatusCode.Unauthorized);
@@ -190,7 +196,7 @@ public class OrderService : IOrderService
         if (order == null || (order.UserId != userId &&
             !order.OrderProducts.Any(op => op.Product != null && op.Product.UserId == userId)))
         {
-            return new("Access denied", false, HttpStatusCode.Forbidden);
+            return new("Id not faound", false, HttpStatusCode.Forbidden);
         }
 
         var dto = _mapper.Map<OrderGetDto>(order);
@@ -301,6 +307,12 @@ public class OrderService : IOrderService
 
     public async Task<BaseResponse<string>> ChangeOrderStatusAsync(Guid orderId, OrderStatus newStatus)
     {
+        if (orderId == Guid.Empty)
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
+        if (!Enum.IsDefined(typeof(OrderStatus), newStatus))
+            return new("Invalid order status", HttpStatusCode.BadRequest);
+
         // Sifarişi götürürük, tracking aktiv, Buyer və Seller məlumatlarıyla birlikdə
         var order = await _orderRepository.GetAll(isTracking: true)
             .Include(o => o.User) // Buyer
