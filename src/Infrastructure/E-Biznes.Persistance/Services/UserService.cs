@@ -67,7 +67,7 @@ public class UserService : IUserService
         {
             return new("This email is already registered", HttpStatusCode.BadRequest);
         }
-        if (dto.RoleId != UserRole.Buyer && dto.RoleId != UserRole.Seller)
+        if (dto.RoleId != MarketplaceRole.Buyer && dto.RoleId != MarketplaceRole.Seller)
         {
             return new("Invalid role", HttpStatusCode.BadRequest);
         }
@@ -84,8 +84,8 @@ public class UserService : IUserService
         }
         string roleName = dto.RoleId switch
         {
-            UserRole.Buyer => "Buyer",
-            UserRole.Seller => "Seller",
+            MarketplaceRole.Buyer => "Buyer",
+            MarketplaceRole.Seller => "Seller",
             _ => throw new ArgumentOutOfRangeException(nameof(dto.RoleId), "Invalid user role")
         };
         if (roleName is null)
@@ -261,19 +261,7 @@ public class UserService : IUserService
             var dto = _mapper.Map<UserGetDto>(user);
             var roles = _userManager.GetRolesAsync(user).Result;
             dto.Roles = roles.ToList();
-            dto.Orders = user.Orders.Select(order => new OrderGetDto
-            {
-                Id = order.Id,
-                TotalPrice = order.TotalPrice,
-                OrderProducts = order.OrderProducts.Select(op => new OrderProductDto
-                {
-                    ProductId = op.ProductId,
-                    ProductName = op.Product?.Name ?? "Unknown",
-                    Quantity = op.Quantity,
-                    UnitPrice = op.UnitPrice
-                }).ToList()
-            }).ToList();
-
+            dto.Orders = _mapper.Map<List<OrderGetDto>>(user.Orders);
             return dto;
         }).ToList();
         return new(userDtos, true, HttpStatusCode.OK);
@@ -360,6 +348,7 @@ public class UserService : IUserService
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var jwt = tokenHandler.WriteToken(token);
+
         var refreshToken = GenerateRefreshToken();
         var refreshTokenExpiryDate = DateTime.UtcNow.AddHours(2);
         user.RefreshToken = refreshToken;
@@ -367,7 +356,7 @@ public class UserService : IUserService
         await _userManager.UpdateAsync(user);
         return new TokenResponse
         {
-            Token = jwt,
+            Token = jwt.Trim(),
             ExpireDate = tokenDescriptor.Expires!.Value,
             RefreshToken = refreshToken,
         };

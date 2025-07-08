@@ -3,6 +3,6 @@
 public record ImageDto
 {
     public Guid Id { get; set; }
-    public string Image_Url { get; set; } = string.Empty;
+    public string Image_Url { get; set; } = null!;
     public bool IsMain { get; set; }
 }

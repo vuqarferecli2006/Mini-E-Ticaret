@@ -3,11 +3,9 @@
 public record ReviewGetDto
 {
     public Guid Id { get; set; }
-    public string Content { get; set; } = string.Empty;
+    public string Content { get; set; } = null!;
     public int Rating { get; set; }
     public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = null!;
     public string? UserFullName { get; set; }
-
-
 }

@@ -50,17 +50,27 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.AddProductFavouriteAsync(productId);
             return StatusCode((int)result.StatusCode, result);
         }
-        [HttpPut]
-        [Authorize(Policy = Permission.Product.Update)]
+        [HttpPost]
+        [Authorize(Policy = Permission.Product.AddProductDisCount)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> UpdateProductWithImages([FromForm] ProductUpdateWithImagesDto dto)
+        public async Task<IActionResult> AddProductDisCount(Guid productId, decimal disCount)
         {
-            var result = await _productService.UpdateWithImagesAsync(dto);
+            var result = await _productService.AddProductDisCount(productId,disCount);
             return StatusCode((int)result.StatusCode, result);
         }
         
+        [HttpGet]
+        [Authorize(Policy = Permission.Product.GetAll)]
+        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAllAsync()
+        {
+            var result = await _productService.GetAllAsync();
+            return StatusCode((int)result.StatusCode, result);
+        }
         [HttpGet]
         [Authorize(Policy = Permission.Product.GetMy)]
         [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
@@ -90,6 +100,16 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.GetAllFavouritesAsync();
             return StatusCode((int)result.StatusCode, result);
         }
+        [HttpPut]
+        [Authorize(Policy = Permission.Product.Update)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> UpdateProductWithImages([FromForm] ProductUpdateWithImagesDto dto)
+        {
+            var result = await _productService.UpdateWithImagesAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
         [HttpDelete]
         [Authorize(Policy = Permission.Product.DeleteProductImage)]
         [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
@@ -100,7 +120,16 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.DeleteImageAsync(imageId);
             return StatusCode((int)result.StatusCode, result);
         }
-        
+        [HttpDelete]
+        [Authorize(Policy = Permission.Product.CancelProductDisCount)]
+        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> CancelProductDisCount(Guid porductId)
+        {
+            var result = await _productService.CancelProductDisCount(porductId);
+            return StatusCode((int)result.StatusCode, result);
+        }
         [HttpDelete]
         [Authorize(Policy = Permission.Product.Deletefavourite)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
@@ -121,15 +150,6 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _productService.DeleteAsync(id);
             return StatusCode((int)result.StatusCode, result);
         }
-        [HttpGet]
-        [Authorize(Policy = Permission.Product.GetAll)]
-        [ProducesResponseType(typeof(BaseResponse<List<ProductGetDto>>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> GetAllAsync()
-        {
-            var result = await _productService.GetAllAsync();
-            return StatusCode((int)result.StatusCode, result);
-        }
+        
     }
 }

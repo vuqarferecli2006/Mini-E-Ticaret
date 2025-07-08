@@ -6,6 +6,7 @@ public record OrderGetDto
 {
     public Guid Id { get; set; }
     public decimal TotalPrice { get; set; }
-    public string? UserName { get; set; }
+    public string? UserFullName { get; set; }
+    public string Status { get; set; }=null!;
     public List<OrderProductDto> OrderProducts { get; set; } = new();
 }

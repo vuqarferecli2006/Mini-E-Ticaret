@@ -5,18 +5,21 @@ using E_Biznes.Domain.Entities;
 
 namespace E_Biznes.Application.Mappings.OrderMappingProfile;
 
-public class OrderProfile:Profile
+public class OrderProfile : Profile
 {
     public OrderProfile()
     {
         CreateMap<AppUser, UserGetDto>();
+       
         CreateMap<Order, OrderGetDto>()
-            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
-            .ForMember(dest => dest.OrderProducts, opt => opt.MapFrom(src => src.OrderProducts));
+            .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User.FullName))
+            .ForMember(dest => dest.OrderProducts, opt => opt.MapFrom(src => src.OrderProducts))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User.FullName));
+     
         CreateMap<OrderProduct, OrderProductDto>()
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
-
-
+  
         CreateMap<OrderProduct, OrderProductDto>()
             .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))

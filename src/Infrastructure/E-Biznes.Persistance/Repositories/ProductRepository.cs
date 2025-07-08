@@ -18,9 +18,9 @@ public class ProductRepository : Repository<Product>, IProductRepository
         await _context.Images.AddRangeAsync(images);
         await _context.SaveChangesAsync();
     }
-    public async Task RemoveImagesAsync(List<Image> images)
+    public async Task UpdateImage(Image images)
     {
-        _context.Images.RemoveRange(images);
+        _context.Images.Update(images);
         await _context.SaveChangesAsync();
     }
     public override async Task<Product?> GetByIdAsync(Guid id)
@@ -37,11 +37,6 @@ public class ProductRepository : Repository<Product>, IProductRepository
         return await _context.Images.FindAsync(imageId);
     }
 
-    public void RemoveImage(Image image)
-    {
-        _context.Images.Remove(image);
-    }
-
     public async Task<bool> IsProductFavouriteAsync(Guid productId, string userId)
     {
         return await _context.Favourites.AnyAsync(f => f.ProductId == productId && f.UserId == userId);
@@ -52,9 +47,9 @@ public class ProductRepository : Repository<Product>, IProductRepository
         await _context.Favourites.AddAsync(favourite);
         await _context.SaveChangesAsync();
     }
-    public async Task RemoveFavouriteAsync(Favourite favourite)
+    public async Task UpdateFavouriteAsync(Favourite favourite)
     {
-        _context.Favourites.Remove(favourite);
+        _context.Favourites.Update(favourite);
         await _context.SaveChangesAsync();
     }
 
@@ -67,7 +62,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _context.Favourites
             .Include(f => f.Product)   // Məhsul məlumatını da gətir
-            .Where(f => f.UserId == userId)
+            .Where(f => f.UserId == userId && !f.IsDeleted)
             .ToListAsync();
     }
 

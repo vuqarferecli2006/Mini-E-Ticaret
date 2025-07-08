@@ -83,7 +83,6 @@ public class RoleService : IRoleService
         return new BaseResponse<string>("Role deleted successfully", true, HttpStatusCode.OK);
     }
 
-
     public async Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, IEnumerable<string> permissions)
     {
         var role = await _roleManager.FindByIdAsync(roleId);
@@ -120,7 +119,29 @@ public class RoleService : IRoleService
         return new("Selected permissions removed successfully", true, HttpStatusCode.OK);
     }
 
+    public async Task<BaseResponse<List<RoleWithPermissionsDto>>> GetRolePermissionsAsync()
+    {
+        var roles = _roleManager.Roles.ToList();
 
+        var result = new List<RoleWithPermissionsDto>();
 
+        foreach (var role in roles)
+        {
+            var claims = await _roleManager.GetClaimsAsync(role);
+            var permissions = claims
+                .Where(c => c.Type == "Permission")
+                .Select(c => c.Value)
+                .ToList();
+
+            result.Add(new RoleWithPermissionsDto
+            {
+                RoleId = role.Id,
+                RoleName = role.Name,
+                Permissions = permissions
+            });
+        }
+
+        return new BaseResponse<List<RoleWithPermissionsDto>>(result, true, HttpStatusCode.OK);
+    }
 
 }

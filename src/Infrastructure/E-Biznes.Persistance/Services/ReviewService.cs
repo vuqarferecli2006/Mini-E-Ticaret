@@ -72,7 +72,8 @@ public class ReviewService : IReviewService
         if (review.UserId != userId)
             return new("You are not allowed to delete this review", false, HttpStatusCode.Forbidden);
 
-        _reviewRepository.Delete(review);
+        review.IsDeleted = true;
+        _reviewRepository.Update(review);
         await _reviewRepository.SaveChangeAsync();
 
         return new("Review deleted successfully", true, HttpStatusCode.OK);
@@ -88,7 +89,7 @@ public class ReviewService : IReviewService
             .GetAll(isTracking: false)
             .Include(r => r.User)
             .Include(r => r.Product)
-            .Where(r => r.ProductId == productId)
+            .Where(r => r.ProductId == productId&&!r.IsDeleted)
             .ToListAsync();
 
         var dtoList = _mapper.Map<List<ReviewGetDto>>(reviews);
@@ -103,7 +104,7 @@ public class ReviewService : IReviewService
             return new BaseResponse<List<ReviewUserGetDto>>("User not found", false, HttpStatusCode.NotFound);
 
         var reviews = await _context.Reviews
-            .Where(r => r.UserId == userId)
+            .Where(r => r.UserId == userId&&!r.IsDeleted)
             .Include(r => r.Product)
                 .ThenInclude(p => p.ProductImages)
             .ToListAsync();

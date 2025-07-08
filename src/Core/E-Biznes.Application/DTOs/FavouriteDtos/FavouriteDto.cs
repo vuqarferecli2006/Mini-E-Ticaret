@@ -3,6 +3,8 @@
 public class FavouriteDto
 {
     public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    public DateTime AddedDate { get; set; }
+    public string ProductName { get; set; } = null!;
+    public decimal DiscountPercent { get; set; }
+    public decimal DiscountedPrice { get; set; }
+    public string? MainImageUrl { get; set; }
 }

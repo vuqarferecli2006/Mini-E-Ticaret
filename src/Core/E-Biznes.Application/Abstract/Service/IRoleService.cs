@@ -12,4 +12,6 @@ public interface IRoleService
     Task<BaseResponse<string?>> UpdateRoleAsync(string roleId, RoleCreateDto dto);
 
     Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, IEnumerable<string> permissions);
+
+    Task<BaseResponse<List<RoleWithPermissionsDto>>> GetRolePermissionsAsync();
 }

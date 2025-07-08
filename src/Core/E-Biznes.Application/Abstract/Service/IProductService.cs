@@ -19,4 +19,6 @@ public interface IProductService
     Task<BaseResponse<string>> DeleteProductFavouriteAsync(Guid productId);
     Task<BaseResponse<List<FavouriteDto>>> GetAllFavouritesAsync();
     Task<BaseResponse<List<ProductGetDto>>> GetAllAsync();
+    Task<BaseResponse<string>> AddProductDisCount(Guid productId, decimal disCount);
+    Task<BaseResponse<ProductGetDto>> CancelProductDisCount(Guid productId);
 }

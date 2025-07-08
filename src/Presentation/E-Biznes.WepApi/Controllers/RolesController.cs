@@ -21,17 +21,6 @@ namespace E_Biznes.WepApi.Controllers
         {
             _roleService = roleService;
         }
-
-        [HttpGet]
-        [Authorize(Policy = Permission.Role.GetAllPermission)]
-        [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.InternalServerError)]
-        public IActionResult GetAllPermission()
-        {
-            var permissions = PermissionHelper.GetAllPermissions();
-            return Ok(permissions);
-        }
         [HttpPost]
         [Authorize(Policy = Permission.Role.Create)]
         [ProducesResponseType(typeof(BaseResponse<RoleCreateDto>), (int)HttpStatusCode.Created)]
@@ -42,7 +31,26 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _roleService.CreateRoleAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
-
+        [HttpGet]
+        [Authorize(Policy = Permission.Role.GetAllPermission)]
+        [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.InternalServerError)]
+        public IActionResult GetAllPermission()
+        {
+            var permissions = PermissionHelper.GetAllPermissions();
+            return Ok(permissions);
+        }
+        [HttpGet]
+        [Authorize(Policy = Permission.Role.GetRoleWithPermissions)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetRoleWithPermission()
+        {
+            var result = await _roleService.GetRolePermissionsAsync();
+            return StatusCode((int)result.StatusCode, result);
+        }
         [HttpPut]
         [Authorize(Policy = Permission.Role.Update)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
@@ -74,5 +82,6 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _roleService.DeletePermissionsAsync(roleId, permissions);
             return StatusCode((int)result.StatusCode, result);
         }
+       
     }
 }

@@ -9,5 +9,5 @@ public record AccountRegisterDto
      public string Password { get; set; } = string.Empty;
      public string Address { get; set; } = string.Empty;
      public int Age {  get; set; }  
-     public AccountRole RoleId {  get; set; }
+     public PlatformRole RoleId {  get; set; }
 }

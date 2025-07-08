@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace E_Biznes.Application.Validations.CategoryValidations;
 
-public class SubCategoryUpdateDtoValidator : AbstractValidator<SubCategoryUpdateDto>
+public class SubCategoryUpdateDtoValidator : AbstractValidator<CategorySubUpdateDto>
 {
     public SubCategoryUpdateDtoValidator()
     {

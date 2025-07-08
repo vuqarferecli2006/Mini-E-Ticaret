@@ -27,6 +27,7 @@ public static class Permission
         public const string Delete = "Role.Delete";
         public const string DeletePermission = "Role.DeletePermission";
         public const string GetAllPermission = "Role.GetAllPermission";
+        public const string GetRoleWithPermissions = "Role.GetRoleWithPermissions";
 
 
         public static List<string> All = new()
@@ -35,7 +36,8 @@ public static class Permission
             GetAllPermission,
             Update,
             Delete,
-            DeletePermission
+            DeletePermission,
+            GetRoleWithPermissions
         };
     }
 
@@ -63,6 +65,8 @@ public static class Permission
         public const string AddProductFavourite = "Product.AddFavourite";
         public const string GetAllFavourite = "Product.GetAllFavourite";
         public const string Deletefavourite = "Product.DeleteFavourite";
+        public const string AddProductDisCount = "Product.AddDisCount";
+        public const string CancelProductDisCount = "Product.CancelDisCount";
 
         public static List<string> All = new()
         {
@@ -75,8 +79,9 @@ public static class Permission
             AddProductFavourite,
             GetAllFavourite,
             Deletefavourite,
-            GetAll
-
+            GetAll,
+            AddProductDisCount,
+            CancelProductDisCount
         };
     }
 

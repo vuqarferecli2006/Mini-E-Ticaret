@@ -12,6 +12,8 @@ public class Product: BaseEntity
 
     public int Stock { get; set; }
 
+    public decimal DiscountPercent { get; set; } = 0;
+
     public ProductCondition Condition { get; set; }
 
     public string? UserId { get; set; }

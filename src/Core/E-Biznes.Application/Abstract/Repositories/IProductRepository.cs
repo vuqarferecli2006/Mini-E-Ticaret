@@ -6,21 +6,17 @@ namespace E_Biznes.Application.Abstract.Repositories;
 
 public interface IProductRepository : IRepository<Product>
 {
-    public Task AddImagesAsync(IEnumerable<Image> images);
+    Task AddImagesAsync(IEnumerable<Image> images);
 
-    public Task RemoveImagesAsync(List<Image> images);
+    Task<Image?> GetImageByIdAsync(Guid imageId);
 
-    // ProductRepository əlavə metodlar
+    Task UpdateImage(Image images);
 
-    public Task<Image?> GetImageByIdAsync(Guid imageId);
+    Task<bool> IsProductFavouriteAsync(Guid productId, string userId);
 
-    public void RemoveImage(Image image);
+    Task AddFavouriteAsync(Favourite favourite);
 
-    public Task<bool> IsProductFavouriteAsync(Guid productId, string userId);
-
-    public Task AddFavouriteAsync(Favourite favourite);
-
-    Task RemoveFavouriteAsync(Favourite favourite);
+    Task UpdateFavouriteAsync(Favourite favourite);
 
     Task<Favourite?> GetFavouriteAsync(Guid productId, string userId);
 

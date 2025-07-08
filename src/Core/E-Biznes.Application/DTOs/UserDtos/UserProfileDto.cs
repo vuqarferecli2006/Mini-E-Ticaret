@@ -9,7 +9,6 @@ public record UserProfileDto
     public string Address { get; set; } = null!;
     public int Age { get; set; }
     public string Role { get; set; } = null!;
-
     public List<ProductSimpleDto>? ProductsForSale { get; set; }
     public List<ProductSimpleDto>? PurchasedProducts { get; set; }
 }

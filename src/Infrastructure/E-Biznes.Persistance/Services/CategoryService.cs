@@ -35,9 +35,7 @@ public class CategoryService : ICategoryService
 
         var exists = await _categoryRepository
             .GetByFiltered(c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower() &&
-                                c.ParentCategoryId == dto.ParentCategoryId)
-            .AnyAsync();
-
+                                c.ParentCategoryId == dto.ParentCategoryId).AnyAsync();
         if (exists)
             return new("This subcategory already exists under the specified parent", HttpStatusCode.BadRequest);
 
@@ -52,8 +50,7 @@ public class CategoryService : ICategoryService
     {
 
         var exists = await _categoryRepository
-            .GetByFiltered(c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower())
-            .AnyAsync();
+            .GetByFiltered(c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower()).AnyAsync();
 
         if (exists)
             return new("This main category already exists", HttpStatusCode.BadRequest);
@@ -65,25 +62,12 @@ public class CategoryService : ICategoryService
         return new("Main category created",true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<object>> DeleteAsync(Guid id)
-    {
-
-        var categoryDb = await _categoryRepository.GetByIdAsync(id);
-        if (categoryDb is null)
-            return new("Id not faund", HttpStatusCode.NotFound);
-
-        _categoryRepository.Delete(categoryDb);
-        await _categoryRepository.SaveChangeAsync();
-        return new("Category is deleted",true, HttpStatusCode.OK);
-
-    }
-
     public async Task<BaseResponse<List<CategoryMainGetDto>>> GetAllAsync()
     {
         var categories = await _categoryRepository
             .GetAll()
-            .Where(c => c.ParentCategoryId == Guid.Empty || c.ParentCategoryId == null)  // yalnız main category-lər
-            .Include(c => c.SubCategories) // yalnız bir səviyyə subcategory gətiririk
+            .Where(c => c.ParentCategoryId == Guid.Empty || c.ParentCategoryId == null&&!c.IsDeleted) 
+            .Include(c => c.SubCategories.Where(sc=>!sc.IsDeleted)) 
             .ToListAsync();
 
         var dtos = _mapper.Map<List<CategoryMainGetDto>>(categories);
@@ -95,7 +79,8 @@ public class CategoryService : ICategoryService
     {
         var category = await _categoryRepository
             .GetByFiltered(c => c.Id == id && c.ParentCategoryId == null)
-            .Include(c => c.SubCategories)
+            .Include(c => c.SubCategories.Where(sc=>!sc.IsDeleted))
+            .Where(predicate: c => !c.IsDeleted) 
             .FirstOrDefaultAsync();
 
         if (category is null)
@@ -112,8 +97,8 @@ public class CategoryService : ICategoryService
 
         var categories = await _categoryRepository
             .GetAll(isTracking: false)
-            .Where(c => c.Name.ToLower().Contains(search.Trim().ToLower()))
-            .Include(c => c.SubCategories) // Həm main category üçün subcategory-lər gələcək
+            .Where(c => c.Name.ToLower().Contains(search.Trim().ToLower())&&!c.IsDeleted)
+            .Include(c => c.SubCategories.Where(sc => !sc.IsDeleted)) // Həm main category üçün subcategory-lər gələcək
             .ToListAsync();
 
         if (!categories.Any())
@@ -123,7 +108,7 @@ public class CategoryService : ICategoryService
         return new BaseResponse<List<CategoryMainGetDto>>(mapped, true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<CategoryUpdateDto>> UpdateMainCategoryAsync(MainCategoryUpdateDto dto)
+    public async Task<BaseResponse<CategoryUpdateDto>> UpdateMainCategoryAsync(CategoryMainUpdateDto dto)
     {
         var category = await _categoryRepository.GetByIdAsync(dto.Id);
         if (category is null)
@@ -150,8 +135,7 @@ public class CategoryService : ICategoryService
         return new(updatedDto, true, HttpStatusCode.OK);
     }
 
-
-    public async Task<BaseResponse<CategoryUpdateDto>> UpdateSubCategoryAsync(SubCategoryUpdateDto dto)
+    public async Task<BaseResponse<CategoryUpdateDto>> UpdateSubCategoryAsync(CategorySubUpdateDto dto)
     {
         var category = await _categoryRepository.GetByIdAsync(dto.Id);
         if (category is null)
@@ -173,13 +157,11 @@ public class CategoryService : ICategoryService
         var nameExists = await _categoryRepository.GetByFiltered(c =>
             c.Id != dto.Id &&
             c.Name.ToLower().Trim() == dto.Name.ToLower().Trim() &&
-            c.ParentCategoryId == dto.NewParentCategoryId
-        ).AnyAsync();
+            c.ParentCategoryId == dto.NewParentCategoryId).AnyAsync();
 
         if (nameExists)
             return new("Another subcategory with this name already exists under the selected parent", false, HttpStatusCode.BadRequest);
 
-        // AutoMapper istəsən:
         _mapper.Map(dto, category);
         category.ParentCategoryId = dto.NewParentCategoryId;
 
@@ -189,6 +171,5 @@ public class CategoryService : ICategoryService
         var updatedDto = _mapper.Map<CategoryUpdateDto>(category);
         return new(updatedDto, true, HttpStatusCode.OK);
     }
-
 
 }

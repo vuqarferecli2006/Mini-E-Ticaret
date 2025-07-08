@@ -62,16 +62,6 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)result.StatusCode, result);
         }
 
-        [HttpPost("assign-roles")]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> AddRole([FromBody] UserAddRoleDto dto)
-        {
-            var result = await _userService.AddRole(dto);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
         [HttpGet]
         [Authorize(Policy = Permission.User.SendResetEmail)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]

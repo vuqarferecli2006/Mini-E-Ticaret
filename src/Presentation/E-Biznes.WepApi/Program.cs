@@ -1,3 +1,4 @@
+using E_Biznes.Application.Shared;
 using E_Biznes.Application.Shared.Helpers;
 using E_Biznes.Application.Shared.Settings;
 using E_Biznes.Application.Validations.CategoryValidations;
@@ -55,7 +56,6 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
-    
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>

@@ -8,7 +8,7 @@ namespace E_Biznes.Application.Abstract.Service;
 
 public interface IAccountService
 {
-    Task<BaseResponse<string>> AdminRegisterAsync(AccountRegisterDto dto);
+    Task<BaseResponse<string>> RegisterAdminAccountAsync(AccountRegisterDto dto);
 
     Task<BaseResponse<UserGetDto>> GetByIdAsync(AccountGetDto dto);
 }

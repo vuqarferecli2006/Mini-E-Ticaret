@@ -1,8 +1,8 @@
 ﻿namespace E_Biznes.Application.DTOs.CategoryDtos;
 
 public record CategoryUpdateDto
-(
-     string Name ,
-     string? Description ,
-     Guid? ParentCategoryId 
-);
+{
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public Guid? ParentCategoryId { get; set; } 
+}
