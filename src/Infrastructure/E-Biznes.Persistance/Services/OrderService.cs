@@ -45,28 +45,33 @@ public class OrderService : IOrderService
 
     public async Task<BaseResponse<string>> CreateOrderAsync(OrderCreateDto dto)
     {
-        var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);//token ile istifadecini tapir eks halda null qaytarir
         if (string.IsNullOrEmpty(userId))
-            return new("User .not Found", false, HttpStatusCode.Unauthorized);
+            return new("User not found", false, HttpStatusCode.Unauthorized);
+
         var user = await _userManager.FindByIdAsync(userId);
+
         if (user is null)
             return new("User not found", false, HttpStatusCode.NotFound);
+
         var product = await _productRepository.GetByIdAsync(dto.ProductId);
+
         if (product == null)
             return new("Product not found", false, HttpStatusCode.NotFound);
+
         if (product.Stock < dto.Quantity)
         {
             return new("Quantity must not be greater than available stock", HttpStatusCode.BadRequest);
         }
         product.Stock -= dto.Quantity;
         _productRepository.Update(product);
-        var order = new Order
+        var order = new Order//order-e list elave olunur
         {
             UserId = userId,
             TotalPrice = dto.Quantity * product.Price,
             OrderProducts = new List<OrderProduct>
             {
-                new OrderProduct
+                new OrderProduct//orderproduct listi yaradilir
                 {
                     ProductId = product.Id,
                     Quantity = dto.Quantity,
@@ -74,7 +79,7 @@ public class OrderService : IOrderService
                 }
             }
         };
-        order.Status = OrderStatus.Pending; // Yeni sifariş üçün statusu "Pending" olaraq təyin edirik
+        order.Status = OrderStatus.Pending; // Yeni sifariş üçün statusu "Pending" olaraq təyin olunur
 
         await _orderRepository.AddAsync(order);
         await _orderRepository.SaveChangeAsync();
@@ -105,34 +110,36 @@ public class OrderService : IOrderService
 
         var order = await _orderRepository
             .GetAll(isTracking: true)
-            .Where(o => o.Id == orderId)
-            .Include(o => o.User) // Alıcı
-            .Include(o => o.OrderProducts)
+            .Where(o => o.Id == orderId)//order tapilir
+            .Include(o => o.User) // orderin alicisi
+            .Include(o => o.OrderProducts)//hemin ordere bagli olan productlari
                 .ThenInclude(op => op.Product)
-                    .ThenInclude(p => p.User) // Satıcı (Product.User navigation)
+                    .ThenInclude(p => p.User) //hemin mehsulun saticisini
             .FirstOrDefaultAsync();
 
         if (order == null)
             return new("Order not found", false, HttpStatusCode.NotFound);
 
-        if (order.Status != OrderStatus.Pending)
+        if (order.Status != OrderStatus.Pending)//eger mehsul tesdiqlenibse levg etmek olmayacaq
             return new("Only pending orders can be canceled", false, HttpStatusCode.BadRequest);
 
         order.Status = OrderStatus.Cancelled;
         _orderRepository.Update(order);
         await _orderRepository.SaveChangeAsync();
-        // ✅ Alıcıya email
+
+        //aliciya email gedir
         var buyerEmail = order.User.Email;
         var buyerSubject = "Your Order Has Been Canceled";
         var buyerBody = $"Dear {order.User.FullName},\nYour order #{order.Id} has been canceled.";
 
         await _mailService.SendEmailAsync(new List<string> { buyerEmail }, buyerSubject, buyerBody);
-
-        // ✅ Satıcılara email
+         
+        //saticiya mail gedir
         var sellers = order.OrderProducts
             .Select(op => op.Product.User)
             .Where(user => user != null)
-            .DistinctBy(user => user.Id) // təkrar olmasın
+            .DistinctBy(user => user.Id) // sifarişdə eyni satıcının iki məhsulu varsa,
+                                         // bu zaman satıcının emaili yalnız bir dəfə göndərilsin deyə təkrarı çıxarır.
             .ToList();
 
         foreach (var seller in sellers)
@@ -155,7 +162,7 @@ public class OrderService : IOrderService
         var orders = _orderRepository.GetAll(true)
             .Include(o => o.OrderProducts)
                 .ThenInclude(op => op.Product)
-            .Include(o => o.User) // 🔧 Bunu əlavə etdik
+            .Include(o => o.User) //orders e bagli olan userid-i goturur
             .Where(o => o.UserId == userId && o.Status!=OrderStatus.Cancelled);
 
         var list = _mapper.Map<List<OrderGetDto>>(await orders.ToListAsync());
@@ -169,9 +176,9 @@ public class OrderService : IOrderService
             return new("User Not Found", false, HttpStatusCode.Unauthorized);
 
         var orders = _orderRepository.GetAll(true)
-            .Include(o => o.User)
+            .Include(o => o.User)//sifarisi veren alicinin melumati
             .Include(o => o.OrderProducts)
-            .ThenInclude(op => op.Product)
+                .ThenInclude(op => op.Product)//order icindeki productlari goturur
             .Where(o => o.Status!=OrderStatus.Cancelled && o.OrderProducts.Any(op => op.Product != null && op.Product.UserId == userId)); // <-- Soft delete filter
 
         var result = _mapper.Map<List<OrderGetDto>>(await orders.ToListAsync());
@@ -190,7 +197,7 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetAll(isTracking: true)
             .Include(o => o.User) // Alıcı
             .Include(o => o.OrderProducts)
-                .ThenInclude(op => op.Product)
+                .ThenInclude(op => op.Product)//order-e bagli olan productlari getirir
             .FirstOrDefaultAsync(o => o.Id == orderId && o.Status!=OrderStatus.Cancelled); // <-- Soft delete filter
 
         if (order == null || (order.UserId != userId &&
@@ -313,7 +320,6 @@ public class OrderService : IOrderService
         if (!Enum.IsDefined(typeof(OrderStatus), newStatus))
             return new("Invalid order status", HttpStatusCode.BadRequest);
 
-        // Sifarişi götürürük, tracking aktiv, Buyer və Seller məlumatlarıyla birlikdə
         var order = await _orderRepository.GetAll(isTracking: true)
             .Include(o => o.User) // Buyer
             .Include(o => o.OrderProducts)

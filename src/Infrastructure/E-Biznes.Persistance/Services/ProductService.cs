@@ -38,15 +38,15 @@ public class ProductService : IProductService
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-        {
-            return new BaseResponse<string>("User Not found", false, HttpStatusCode.NotFound);
-        }
+            return new("User Not found", false, HttpStatusCode.NotFound);
+        
         var product = _mapper.Map<Product>(dto);
         product.UserId = userId;
+       
         await _productRepository.AddAsync(product);
         await _productRepository.SaveChangeAsync();
         List<Image> imageList = new();
-        int mainIndex = dto.MainImageIndex ?? 0; // Əgər null-dursa, default olaraq ilk şəkil əsasdır
+        int mainIndex = dto.MainImageIndex ?? 0; // Əgər null-dursa, default olaraq ilk şəkil main olur
         for (int i = 0; i < dto.Images.Count; i++)
         {
             var file = dto.Images[i];
@@ -65,18 +65,18 @@ public class ProductService : IProductService
             await _productRepository.SaveChangeAsync();
         }
 
-        return new BaseResponse<string>("Product created successfully", true, HttpStatusCode.Created);
+        return new("Product created successfully", true, HttpStatusCode.Created);
     }
 
     public async Task<BaseResponse<string>> UpdateWithImagesAsync(ProductUpdateWithImagesDto dto)
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<string>("User Not Found", false, HttpStatusCode.Unauthorized);
+            return new("User Not Found", false, HttpStatusCode.Unauthorized);
 
         var product = await _productRepository.GetByIdAsync(dto.ProductId);
         if (product == null || product.UserId != userId)
-            return new BaseResponse<string>("Product not found or access denied", false, HttpStatusCode.NotFound);
+            return new("Product not found or access denied", false, HttpStatusCode.NotFound);
 
         _mapper.Map(dto, product);
 
@@ -117,7 +117,7 @@ public class ProductService : IProductService
             await _productRepository.SaveChangeAsync();
         }
 
-        return new BaseResponse<string>("Product updated successfully", true, HttpStatusCode.OK);
+        return new("Product updated successfully", true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<string>> DeleteAsync(Guid productId)
@@ -127,11 +127,11 @@ public class ProductService : IProductService
 
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<string>("User Not Found", false, HttpStatusCode.Unauthorized);
+            return new("User Not Found", false, HttpStatusCode.Unauthorized);
 
         var product = await _productRepository.GetByIdAsync(productId); // Burada Include ilə şəkillər yüklənməlidir
         if (product == null || product.UserId != userId)
-            return new BaseResponse<string>("Product not found or access denied", false, HttpStatusCode.NotFound);
+            return new("Product not found or access denied", false, HttpStatusCode.NotFound);
         foreach (var image in product.ProductImages)
         {
             await _fileService.DeleteFileAsync(image.Image_Url);
@@ -141,9 +141,10 @@ public class ProductService : IProductService
 
         product.IsDeleted = true; // Məhsulu silmək əvəzinə, onu silinmiş kimi işarələyirik
         _productRepository.Update(product);
+
         await _productRepository.SaveChangeAsync();
 
-        return new BaseResponse<string>("Product deleted successfully", true, HttpStatusCode.OK);
+        return new("Product deleted successfully", true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<string>> AddProductDisCount(Guid productId, decimal disCount)
@@ -164,7 +165,7 @@ public class ProductService : IProductService
         _productRepository.Update(product);
         await _productRepository.SaveChangeAsync();
 
-        decimal discountedPrice = product.Price * (1 - (disCount / 100m));
+        decimal discountedPrice = product.Price * (1 - (disCount / 100m));//endirim qiymeti hesablanir
         return new($"Discount applied. New discounted price is {discountedPrice:F2} AZN", true, HttpStatusCode.OK);
     }
 
@@ -200,7 +201,7 @@ public class ProductService : IProductService
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<List<ProductGetDto>>("User not found", false, HttpStatusCode.Unauthorized);
+            return new("User not found", false, HttpStatusCode.Unauthorized);
 
         var products = await _productRepository.GetAll(isTracking: false)
             .Where(p => p.UserId == userId && !p.IsDeleted)
@@ -212,7 +213,7 @@ public class ProductService : IProductService
 
         var productDtos = _mapper.Map<List<ProductGetDto>>(products);
 
-        return new BaseResponse<List<ProductGetDto>>(productDtos, true, HttpStatusCode.OK);
+        return new(productDtos, true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<string>> DeleteImageAsync(Guid imageId)
@@ -222,35 +223,35 @@ public class ProductService : IProductService
 
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
+            return new ("Unauthorized", false, HttpStatusCode.Unauthorized);
 
         var image = await _productRepository.GetImageByIdAsync(imageId);
         if (image == null || image.IsDeleted)
-            return new BaseResponse<string>("Image not found", false, HttpStatusCode.NotFound);
+            return new("Image not found", false, HttpStatusCode.NotFound);
 
         var product = await _productRepository.GetByIdAsync(image.ProductId);
         if (product == null || product.UserId != userId)
-            return new BaseResponse<string>("Access denied", false, HttpStatusCode.Forbidden);
+            return new("Product not found or access denied", false, HttpStatusCode.Forbidden);
 
         await _fileService.DeleteFileAsync(image.Image_Url);
 
-        image.IsDeleted = true; // Məhsul şəkilini silmək əvəzinə, onu silinmiş kimi işarələyirik
+        image.IsDeleted = true; // MSoft delete
 
         await _productRepository.UpdateImage(image);
         await _productRepository.SaveChangeAsync();
 
-        return new BaseResponse<string>("Image deleted successfully", true, HttpStatusCode.OK);
+        return new("Image deleted successfully", true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<string>> AddProductImageAsync(Guid productId, IFormFile file)
     {
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
+            return new("Unauthorized", false, HttpStatusCode.Unauthorized);
 
         var product = await _productRepository.GetByIdAsync(productId);
         if (product == null || product.UserId != userId)
-            return new BaseResponse<string>("Product not found or access denied", false, HttpStatusCode.NotFound);
+            return new("Product not found or access denied", false, HttpStatusCode.NotFound);
 
         var imageUrl = await _fileService.UploadAsync(file, "product-images");
 
@@ -263,7 +264,7 @@ public class ProductService : IProductService
 
         await _productRepository.AddImagesAsync(new List<Image> { image });
 
-        return new BaseResponse<string>("Image added successfully", true, HttpStatusCode.Created);
+        return new("Image added successfully", true, HttpStatusCode.Created);
     }
 
     public async Task<BaseResponse<string>> AddProductFavouriteAsync(Guid productId)
@@ -273,15 +274,15 @@ public class ProductService : IProductService
 
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
+            return new("Unauthorized", false, HttpStatusCode.Unauthorized);
 
         var product = await _productRepository.GetByIdAsync(productId);
         if (product == null)
-            return new BaseResponse<string>("Product not found", false, HttpStatusCode.NotFound);
+            return new("Product not found", false, HttpStatusCode.NotFound);
 
         var alreadyFavourite = await _productRepository.IsProductFavouriteAsync(productId, userId);
         if (alreadyFavourite)
-            return new BaseResponse<string>("Product already in favourites", false, HttpStatusCode.BadRequest);
+            return new("Product already in favourites", false, HttpStatusCode.BadRequest);
 
         var favourite = new Favourite
         {
@@ -291,7 +292,7 @@ public class ProductService : IProductService
 
         await _productRepository.AddFavouriteAsync(favourite);
 
-        return new BaseResponse<string>("Product added to favourites", true, HttpStatusCode.Created);
+        return new("Product added to favourites", true, HttpStatusCode.Created);
     }
 
     public async Task<BaseResponse<string>> DeleteProductFavouriteAsync(Guid productId)
