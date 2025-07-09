@@ -2,6 +2,7 @@
 using E_Biznes.Application.Abstract.Service;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -38,19 +39,8 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)result.StatusCode, result);
         }
 
-
-        [HttpGet]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> SendResetConfirmEmail([FromQuery] string email)
-        {
-            var result = await _userService.SendResetPasswordEmail(email);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
         [HttpPost]
+        [Authorize(Policy = Permission.User.PasswordReset)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
@@ -61,6 +51,7 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)result.StatusCode, result);
         }
         [HttpPost]
+        [ApiExplorerSettings(IgnoreApi = true)]
         [ProducesResponseType(typeof(BaseResponse<TokenResponse>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
@@ -71,8 +62,19 @@ namespace E_Biznes.WepApi.Controllers
             return StatusCode((int)result.StatusCode, result);
         }
 
-
         [HttpGet]
+        [Authorize(Policy = Permission.User.SendResetEmail)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> SendResetConfirmEmail([FromQuery] string email)
+        {
+            var result = await _userService.SendResetPasswordEmail(email);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpGet]
+        [ApiExplorerSettings(IgnoreApi =true)]
         [ProducesResponseType(typeof(BaseResponse<TokenResponse>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
@@ -82,14 +84,16 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _userService.ConfirmEmail(userId, token);
             return StatusCode((int)result.StatusCode, result);
         }
-        [HttpPost("assign-roles")]
+
+        [HttpGet]
+        [Authorize(Policy = Permission.User.GetMy)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-        public async Task<IActionResult> AddRole([FromBody] UserAddRoleDto dto)
+        public async Task<IActionResult> GetMyProfile()
         {
-            var result = await _userService.AddRole(dto);
-            return StatusCode((int)result.StatusCode, result);
+            var result=await _userService.GetCurrentUserProfileAsync();
+            return Ok(result);
         }
 
     }

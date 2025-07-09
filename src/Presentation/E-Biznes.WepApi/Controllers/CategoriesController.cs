@@ -5,6 +5,7 @@ using E_Biznes.Application.Validations.CategoryValidations;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Net;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -24,7 +25,7 @@ namespace E_Biznes.WepApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy =Permission.Category.MainCreate)]
+        [Authorize(Policy = Permission.Category.MainCategoryCreate)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -36,7 +37,7 @@ namespace E_Biznes.WepApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = Permission.Category.SubCreate)]
+        [Authorize(Policy = Permission.Category.SubCategoryCreate)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -47,18 +48,6 @@ namespace E_Biznes.WepApi.Controllers
         }
 
 
-        [HttpDelete]
-        [Authorize(Policy = Permission.Category.Delete)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-
-        public async Task<IActionResult> DeleteAsync([FromBody]CategoryDeleteDto dto)
-        {
-            var result = await _categoryService.DeleteAsync(dto.Id);
-            return StatusCode((int)result.StatusCode, result);
-        }
-
         [HttpGet]
         [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.NotFound)]
@@ -68,6 +57,45 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _categoryService.GetAllAsync();
             return StatusCode((int)result.StatusCode, result);
         }
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetByIdAsync([FromQuery] Guid id)
+        {
+            var result=await _categoryService.GetByIdAsync(id);
+            return StatusCode((int)result.StatusCode,result);
+        }
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetByNameAsync([FromQuery] string search)
+        {
+            var result = await _categoryService.GetByNameAsync(search);
+            return StatusCode((int)result.StatusCode, result);
+        }
+        [HttpPut]
+        [Authorize(Policy = Permission.Category.MainCategoryUpdate)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> UpdateMainCategory([FromBody] CategoryMainUpdateDto dto)
+        {
 
+            var result = await _categoryService.UpdateMainCategoryAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpPut]
+        [Authorize(Policy = Permission.Category.SubCategoryUpdate)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> UpdateSubCategory([FromBody] CategorySubUpdateDto dto)
+        {
+            var result = await _categoryService.UpdateSubCategoryAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 }

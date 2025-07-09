@@ -1,4 +1,5 @@
 ﻿using AzBinaTeam.Application.DTOs.UserDtos;
+using E_Biznes.Application.DTOs.AccountsDto;
 using E_Biznes.Application.DTOs.UserDtos;
 using E_Biznes.Application.Shared;
 
@@ -19,4 +20,8 @@ public interface IUserService
     Task<BaseResponse<string>> ResetPassword(UserResetPasswordDto dto);
 
     Task<BaseResponse<string>> SendResetPasswordEmail(string email);
+
+    Task<BaseResponse<List<UserGetDto>>> GetAllAsync();
+
+    Task<BaseResponse<UserProfileDto>> GetCurrentUserProfileAsync();
 }

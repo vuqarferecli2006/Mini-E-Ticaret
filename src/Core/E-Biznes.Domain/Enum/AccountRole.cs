@@ -1,8 +1,8 @@
 ﻿namespace E_Biznes.Domain.Enum;
 
-public enum AccountRole
+public enum PlatformRole
 {
-    Seler = 1,
+    Seller = 1,
     Moderator = 2,
     Admin = 3,
 }

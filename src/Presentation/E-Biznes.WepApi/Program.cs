@@ -1,6 +1,8 @@
+using E_Biznes.Application.Shared;
 using E_Biznes.Application.Shared.Helpers;
 using E_Biznes.Application.Shared.Settings;
 using E_Biznes.Application.Validations.CategoryValidations;
+using E_Biznes.Application.Validations.UserValidations;
 using E_Biznes.Domain.Entities;
 using E_Biznes.Persistance;
 using E_Biznes.Persistance.Contexts;
@@ -23,7 +25,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
-builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
 builder.Services.AddAutoMapper(typeof(CategoryProfile).Assembly);
 builder.Services.AddSwaggerGen(c =>
 {
@@ -33,7 +35,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
+        Type = SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
@@ -49,7 +51,10 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                }
+                },
+                Scheme = "bearer",
+                Name = "Bearer",
+                In = ParameterLocation.Header
             },
             new string[] {}
         }
@@ -111,7 +116,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterService();
 
 var app = builder.Build();
@@ -122,6 +127,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(); // wwwroot içind?ki ??kill?r? brauzer daxil ola bilsin dey?
 
 app.UseHttpsRedirection();
 

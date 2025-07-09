@@ -31,7 +31,7 @@ public class UserRegisterValidator : AbstractValidator<UserRegisterDto>
             .InclusiveBetween(18, 100).WithMessage("Age must be between 18 and 100.");
 
         RuleFor(x => x.RoleId)
-            .Must(role => role == UserRole.Buyer || role == UserRole.Seller)
+            .Must(role => role == MarketplaceRole.Buyer || role == MarketplaceRole.Seller)
             .WithMessage("Only Buyer or Seller roles are allowed.");
     }
 }

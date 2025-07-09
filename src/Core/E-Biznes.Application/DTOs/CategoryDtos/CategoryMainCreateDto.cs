@@ -2,6 +2,6 @@
 
 public record CategoryMainCreateDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
+    public string Name {  get; set; } =null!;
+    public string? Description {  get; set; }
 }

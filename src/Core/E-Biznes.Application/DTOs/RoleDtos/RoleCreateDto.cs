@@ -2,7 +2,6 @@
 
 public record RoleCreateDto
 {
-    public string Name { get; init; } = string.Empty;
-
-    public List<string> Permissions { get; set; }
+    public string Name { get; init; } = null!;
+    public List<string> Permissions { get; set; } = new();
 }

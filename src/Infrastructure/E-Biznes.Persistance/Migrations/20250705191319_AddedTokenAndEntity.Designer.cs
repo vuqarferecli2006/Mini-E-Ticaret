@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace E_Biznes.Persistance.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250703163828_AddedrefreshToken")]
-    partial class AddedrefreshToken
+    [Migration("20250705191319_AddedTokenAndEntity")]
+    partial class AddedTokenAndEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
