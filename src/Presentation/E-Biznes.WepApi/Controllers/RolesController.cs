@@ -31,6 +31,16 @@ namespace E_Biznes.WepApi.Controllers
             var result = await _roleService.CreateRoleAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
+        [HttpPost]
+        [Authorize(Policy = Permission.Role.AddPermission)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> AddPermission(string roleId, List<string> permission)
+        {
+            var result = await _roleService.AddPermission(roleId, permission);
+            return StatusCode((int)result.StatusCode, result);
+        }
         [HttpGet]
         [Authorize(Policy = Permission.Role.GetAllPermission)]
         [ProducesResponseType(typeof(BaseResponse<List<string>>), (int)HttpStatusCode.OK)]

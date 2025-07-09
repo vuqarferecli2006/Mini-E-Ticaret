@@ -28,6 +28,7 @@ public static class Permission
         public const string DeletePermission = "Role.DeletePermission";
         public const string GetAllPermission = "Role.GetAllPermission";
         public const string GetRoleWithPermissions = "Role.GetRoleWithPermissions";
+        public const string AddPermission = "Role.AddPermission";
 
 
         public static List<string> All = new()
@@ -37,7 +38,8 @@ public static class Permission
             Update,
             Delete,
             DeletePermission,
-            GetRoleWithPermissions
+            GetRoleWithPermissions,
+            AddPermission
         };
     }
 

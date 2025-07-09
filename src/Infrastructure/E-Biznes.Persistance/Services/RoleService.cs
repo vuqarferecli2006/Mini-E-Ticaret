@@ -4,6 +4,7 @@ using E_Biznes.Application.Shared;
 using E_Biznes.Application.Shared.Helpers;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
+using System.Security.Claims;
 
 namespace E_Biznes.Persistance.Services;
 
@@ -39,6 +40,51 @@ public class RoleService : IRoleService
             return permissionResult;
 
         return new BaseResponse<string?>("Role created successfully", true, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<string>> AddPermission(string roleId, List<string> permissions)
+    {
+        if (string.IsNullOrWhiteSpace(roleId))
+            return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+        if(permissions is null || !permissions.Any())
+            return new("Permissions mustn't be empty", HttpStatusCode.BadRequest);
+
+        var role = await _roleManager.FindByIdAsync(roleId);
+        if (role == null)
+            return new("Role not found", false, HttpStatusCode.NotFound);
+
+        var permissionList = PermissionHelper.GetPermissionList();
+        var invalidPermissions = permissions
+            .Where(p => !permissionList.Contains(p, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        if (invalidPermissions.Any())
+        {
+            var invalids = string.Join(", ", invalidPermissions);
+            return new($"Invalid permissions: {invalids}", false, HttpStatusCode.BadRequest);
+        }
+
+        var existingClaims = await _roleManager.GetClaimsAsync(role);
+        var existingPermissionValues = existingClaims
+            .Where(c => c.Type == "Permission")
+            .Select(c => c.Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var newPermissions = permissions
+            .Where(p => !existingPermissionValues.Contains(p))
+            .ToList();
+
+        foreach (var perm in newPermissions)
+        {
+            var result = await _roleManager.AddClaimAsync(role, new Claim("Permission", perm));
+            if (!result.Succeeded)
+            {
+                var error = string.Join("; ", result.Errors.Select(e => e.Description));
+                return new($"Failed to add permission '{perm}': {error}", false, HttpStatusCode.BadRequest);
+            }
+        }
+
+        return new("Permissions added successfully", true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<string?>> UpdateRoleAsync(string roleId, RoleCreateDto dto)
@@ -88,10 +134,13 @@ public class RoleService : IRoleService
         return new BaseResponse<string>("Role deleted successfully", true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, IEnumerable<string> permissions)
+    public async Task<BaseResponse<string>> DeletePermissionsAsync(string roleId, List<string> permissions)
     {
         if (roleId is null)
             return new("Id mustn't be empty", HttpStatusCode.BadRequest);
+
+        if (permissions is null || !permissions.Any())
+            return new("Permissions mustn't be empty", HttpStatusCode.BadRequest);
 
         var role = await _roleManager.FindByIdAsync(roleId);
         if (role is null)
