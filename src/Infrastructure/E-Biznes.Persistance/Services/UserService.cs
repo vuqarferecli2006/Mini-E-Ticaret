@@ -158,60 +158,6 @@ public class UserService : IUserService
         return new("Token refreshed successfully", tokenResponse,true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<string>> AddRole(UserAddRoleDto dto)
-    {
-        var user = await _userManager.FindByIdAsync(dto.UserId.ToString());
-        if (user is null)
-        {
-            return new BaseResponse<string>("User not found", false, HttpStatusCode.NotFound);
-        }
-        var seenRoleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var roleNamesToAssign = new List<string>();
-        foreach (var roleId in dto.RoleId.Distinct())
-        {
-            var role = await _roleManager.FindByIdAsync(roleId.ToString());
-
-            if (role == null || string.IsNullOrWhiteSpace(role.Name))
-            {
-                return new BaseResponse<string>($"Role with ID '{roleId}' is invalid or has no name", false, HttpStatusCode.BadRequest);
-            }
-            if (await _userManager.IsInRoleAsync(user, role.Name))
-            {
-                return new BaseResponse<string>($"User already has the role '{role.Name}'", false, HttpStatusCode.BadRequest);
-            }
-            if (!seenRoleNames.Add(role.Name))
-            {
-                return new BaseResponse<string>($"Duplicate role '{role.Name}' detected in request", false, HttpStatusCode.BadRequest);
-            }
-
-            roleNamesToAssign.Add(role.Name);
-        }
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        if (currentRoles.Any())
-        {
-            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            if (!removeResult.Succeeded)
-            {
-                var errors = string.Join(", ", removeResult.Errors.Select(e => e.Description));
-                return new BaseResponse<string>($"Failed to remove existing roles: {errors}", false, HttpStatusCode.InternalServerError);
-            }
-        }
-        foreach (var roleName in roleNamesToAssign)
-        {
-            var result = await _userManager.AddToRoleAsync(user, roleName);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return new BaseResponse<string>($"Failed to assign role '{roleName}': {errors}", false, HttpStatusCode.BadRequest);
-            }
-        }
-        return new BaseResponse<string>(
-            $"Roles updated successfully: {string.Join(", ", roleNamesToAssign)}",
-            true,
-            HttpStatusCode.OK
-        );
-    }
-
     public async Task<BaseResponse<string>> ResetPassword(UserResetPasswordDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
@@ -243,28 +189,6 @@ public class UserService : IUserService
         var resetLink = await GetEmailResetConfirm(user);
         await _mailservice.SendEmailAsync(new List<string> { user.Email }, "Reset Password", resetLink);
         return new BaseResponse<string>("Email confirmed successfully", true, HttpStatusCode.OK);
-    }
-
-    public async Task<BaseResponse<List<UserGetDto>>> GetAllAsync()
-    {
-        var users = await _userManager.Users
-            .Include(u => u.Orders)
-                .ThenInclude(o => o.OrderProducts)
-                    .ThenInclude(op => op.Product)
-            .ToListAsync();
-        if (users.Count == 0)
-        {
-            return new("No users found", false, HttpStatusCode.NotFound);
-        }
-        var userDtos = users.Select(user =>
-        {
-            var dto = _mapper.Map<UserGetDto>(user);
-            var roles = _userManager.GetRolesAsync(user).Result;
-            dto.Roles = roles.ToList();
-            dto.Orders = _mapper.Map<List<OrderGetDto>>(user.Orders);
-            return dto;
-        }).ToList();
-        return new(userDtos, true, HttpStatusCode.OK);
     }
 
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)

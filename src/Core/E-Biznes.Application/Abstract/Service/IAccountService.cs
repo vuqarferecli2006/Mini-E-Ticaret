@@ -11,4 +11,8 @@ public interface IAccountService
     Task<BaseResponse<string>> RegisterAdminAccountAsync(AccountRegisterDto dto);
 
     Task<BaseResponse<UserGetDto>> GetByIdAsync(AccountGetDto dto);
+
+    Task<BaseResponse<List<UserGetDto>>> GetAllAsync();
+
+    Task<BaseResponse<string>> AddRole(UserAddRoleDto dto);
 }

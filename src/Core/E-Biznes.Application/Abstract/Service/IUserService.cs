@@ -11,8 +11,6 @@ public interface IUserService
 
     Task<BaseResponse<TokenResponse>> LoginAsync(UserLoginDto dto);
 
-    Task<BaseResponse<string>> AddRole(UserAddRoleDto dto);
-
     Task<BaseResponse<TokenResponse>> RefreshTokenAsync(RefrexhTokenRequestDto request);
 
     Task<BaseResponse<string>> ConfirmEmail(string userId, string token);
@@ -20,8 +18,6 @@ public interface IUserService
     Task<BaseResponse<string>> ResetPassword(UserResetPasswordDto dto);
 
     Task<BaseResponse<string>> SendResetPasswordEmail(string email);
-
-    Task<BaseResponse<List<UserGetDto>>> GetAllAsync();
 
     Task<BaseResponse<UserProfileDto>> GetCurrentUserProfileAsync();
 }

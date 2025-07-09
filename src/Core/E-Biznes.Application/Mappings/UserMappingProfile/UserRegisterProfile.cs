@@ -18,7 +18,7 @@ public class UserRegisterProfile: Profile
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
        
-        CreateMap<AccountRegisterDto, AppUser>()
+        CreateMap<AccountRegisterDto, AppUser>()//accountu map edir
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
@@ -26,8 +26,8 @@ public class UserRegisterProfile: Profile
                 .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.Age))
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
         
-        CreateMap<AppUser, UserGetDto>();
-        
+        CreateMap<AppUser, UserGetDto>();// appUser-i UserGetDto-ya map edir GetById-de istifade etmisem
+
         CreateMap<Order, OrderDto>();
         
         CreateMap<OrderProduct, OrderProductDto>()

@@ -16,12 +16,10 @@ namespace E_Biznes.WepApi.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IAccountService _accountService;
-        private readonly IUserService _userService;
 
-        public AccountsController(IAccountService accountService, IUserService userService)
+        public AccountsController(IAccountService accountService)
         {
             _accountService = accountService;
-            _userService = userService;
         }
         [HttpPost]
         [Authorize(Policy =Permission.Account.Create)]
@@ -40,7 +38,7 @@ namespace E_Biznes.WepApi.Controllers
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> AddRole([FromBody] UserAddRoleDto dto)
         {
-            var result = await _userService.AddRole(dto);
+            var result = await _accountService.AddRole(dto);
             return StatusCode((int)result.StatusCode, result);
         }
 
@@ -51,7 +49,7 @@ namespace E_Biznes.WepApi.Controllers
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAllUsersAsync()
         {
-            var result = await _userService.GetAllAsync();
+            var result = await _accountService.GetAllAsync();
             return StatusCode((int)result.StatusCode, result);
         }
         [HttpGet]
