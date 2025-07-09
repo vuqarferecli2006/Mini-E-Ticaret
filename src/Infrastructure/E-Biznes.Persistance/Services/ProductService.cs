@@ -64,7 +64,7 @@ public class ProductService : IProductService
             await _productRepository.AddImagesAsync(imageList);
             await _productRepository.SaveChangeAsync();
         }
-        
+
         return new BaseResponse<string>("Product created successfully", true, HttpStatusCode.Created);
     }
 
@@ -116,11 +116,11 @@ public class ProductService : IProductService
             await _productRepository.AddImagesAsync(imageList);
             await _productRepository.SaveChangeAsync();
         }
-        
+
         return new BaseResponse<string>("Product updated successfully", true, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<string>> DeleteAsync(Guid productId) 
+    public async Task<BaseResponse<string>> DeleteAsync(Guid productId)
     {
         if (productId == Guid.Empty)
             return new("Id mustn't be empty", HttpStatusCode.BadRequest);
@@ -138,7 +138,7 @@ public class ProductService : IProductService
             image.IsDeleted = true; // Məhsul şəkillərini silmək əvəzinə
             await _productRepository.UpdateImage(image); // onları silinmiş kimi işarələyirik
         }
-        
+
         product.IsDeleted = true; // Məhsulu silmək əvəzinə, onu silinmiş kimi işarələyirik
         _productRepository.Update(product);
         await _productRepository.SaveChangeAsync();
@@ -219,13 +219,13 @@ public class ProductService : IProductService
     {
         if (imageId == Guid.Empty)
             return new("Id mustn't be empty", HttpStatusCode.BadRequest);
-        
+
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return new BaseResponse<string>("Unauthorized", false, HttpStatusCode.Unauthorized);
 
         var image = await _productRepository.GetImageByIdAsync(imageId);
-        if (image == null ||  image.IsDeleted)
+        if (image == null || image.IsDeleted)
             return new BaseResponse<string>("Image not found", false, HttpStatusCode.NotFound);
 
         var product = await _productRepository.GetByIdAsync(image.ProductId);
@@ -234,8 +234,8 @@ public class ProductService : IProductService
 
         await _fileService.DeleteFileAsync(image.Image_Url);
 
-        image.IsDeleted=true; // Məhsul şəkilini silmək əvəzinə, onu silinmiş kimi işarələyirik
-        
+        image.IsDeleted = true; // Məhsul şəkilini silmək əvəzinə, onu silinmiş kimi işarələyirik
+
         await _productRepository.UpdateImage(image);
         await _productRepository.SaveChangeAsync();
 
@@ -326,7 +326,13 @@ public class ProductService : IProductService
         var favouriteDtos = favourites.Select(f => new FavouriteDto
         {
             ProductId = f.ProductId,
-            ProductName = f.Product.Name
+            ProductName = f.Product.Name,
+            Price = f.Product.Price,
+            DiscountPercent = f.Product.DiscountPercent,
+            DiscountedPrice = f.Product.DiscountPercent > 0
+                ? f.Product.Price - (f.Product.Price * f.Product.DiscountPercent / 100)
+                : f.Product.Price,
+            MainImageUrl = f.Product.ProductImages.FirstOrDefault(i => i.IsMain)?.Image_Url,
         }).ToList();
 
         return new BaseResponse<List<FavouriteDto>>(favouriteDtos, true, HttpStatusCode.OK);
@@ -335,79 +341,82 @@ public class ProductService : IProductService
     public async Task<BaseResponse<List<ProductGetDto>>> GetFilteredProductsAsync(ProductFilterParams filter)
     {
         var query = _productRepository.GetAll(isTracking: false)
+            .Include(p=>p.Category)
             .Include(p => p.ProductImages)
-            .Include(p => p.Reviews)
+            .Include(p => p.Reviews.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.User)
-            .Where(p => !p.IsDeleted)
-            .Select(p => new
-            {
-                Product = p,
-                AverageRating = p.Reviews.Any() ? p.Reviews.Average(r => (int)r.Rating) : 0
-            })
-            .AsQueryable();
+            .Where(p => !p.IsDeleted);
 
         if (filter.CategoryId.HasValue)
-            query = query.Where(x => x.Product.CategoryId == filter.CategoryId.Value);
+            query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
 
         if (filter.MinPrice.HasValue)
-            query = query.Where(x => x.Product.Price >= filter.MinPrice.Value);
+            query = query.Where(p => p.Price >= filter.MinPrice.Value);
 
         if (filter.MaxPrice.HasValue)
-            query = query.Where(x => x.Product.Price <= filter.MaxPrice.Value);
-
-        if (filter.MinRating != 0)
-            query = query.Where(x => x.AverageRating >= (int)filter.MinRating);
-
-        if (filter.MaxRating != 0)
-            query = query.Where(x => x.AverageRating <= (int)filter.MaxRating);
+            query = query.Where(p => p.Price <= filter.MaxPrice.Value);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var search = filter.Search.ToLower();
-            query = query.Where(x =>
-                x.Product.Name.ToLower().Contains(search) ||
-                x.Product.Description.ToLower().Contains(search));
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(search) ||
+                p.Description.ToLower().Contains(search));
         }
 
+        var queryWithRating = query
+            .Select(p => new
+            {
+                Product = p,
+                AverageRating = p.Reviews.Any(r => !r.IsDeleted)
+                    ? p.Reviews.Where(r => !r.IsDeleted).Average(r => (int)r.Rating)
+                    : 0
+            });
+
+        if (filter.MinRating.HasValue && filter.MinRating != 0)
+            queryWithRating = queryWithRating.Where(x => x.AverageRating >= (int)filter.MinRating);
+
+        if (filter.MaxRating.HasValue && filter.MaxRating != 0)
+            queryWithRating = queryWithRating.Where(x => x.AverageRating <= (int)filter.MaxRating);
+
+        // Sort
         if (!string.IsNullOrWhiteSpace(filter.SortBy))
         {
             bool isDescending = filter.SortDirection?.ToLower() == "desc";
-
             switch (filter.SortBy.ToLower())
             {
                 case "price":
-                    query = isDescending
-                        ? query.OrderByDescending(x => x.Product.Price)
-                        : query.OrderBy(x => x.Product.Price);
+                    queryWithRating = isDescending
+                        ? queryWithRating.OrderByDescending(x => x.Product.Price)
+                        : queryWithRating.OrderBy(x => x.Product.Price);
                     break;
                 case "name":
-                    query = isDescending
-                        ? query.OrderByDescending(x => x.Product.Name)
-                        : query.OrderBy(x => x.Product.Name);
-                    break;
-                case "createddate":
-                    query = isDescending
-                        ? query.OrderByDescending(x => x.Product.CreatedAt)
-                        : query.OrderBy(x => x.Product.CreatedAt);
+                    queryWithRating = isDescending
+                        ? queryWithRating.OrderByDescending(x => x.Product.Name)
+                        : queryWithRating.OrderBy(x => x.Product.Name);
                     break;
                 case "rating":
-                    query = isDescending
-                        ? query.OrderByDescending(x => x.AverageRating)
-                        : query.OrderBy(x => x.AverageRating);
+                    queryWithRating = isDescending
+                        ? queryWithRating.OrderByDescending(x => x.AverageRating)
+                        : queryWithRating.OrderBy(x => x.AverageRating);
+                    break;
+                case "createddate":
+                    queryWithRating = isDescending
+                        ? queryWithRating.OrderByDescending(x => x.Product.CreatedAt)
+                        : queryWithRating.OrderBy(x => x.Product.CreatedAt);
                     break;
                 default:
-                    query = query.OrderByDescending(x => x.Product.CreatedAt);
+                    queryWithRating = queryWithRating.OrderByDescending(x => x.Product.CreatedAt);
                     break;
             }
         }
         else
         {
-            query = query.OrderBy(x => x.Product.CreatedAt);
+            queryWithRating = queryWithRating.OrderBy(x => x.Product.CreatedAt);
         }
 
-        var products = await query.Select(x => x.Product).ToListAsync();
+        var products = await queryWithRating.Select(x => x.Product).ToListAsync();
         var mapped = _mapper.Map<List<ProductGetDto>>(products);
-
         return new BaseResponse<List<ProductGetDto>>(mapped, true, HttpStatusCode.OK);
     }
 

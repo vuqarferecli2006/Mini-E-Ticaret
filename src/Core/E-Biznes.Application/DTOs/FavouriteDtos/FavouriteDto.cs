@@ -4,6 +4,7 @@ public class FavouriteDto
 {
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = null!;
+    public decimal Price { get; set; }
     public decimal DiscountPercent { get; set; }
     public decimal DiscountedPrice { get; set; }
     public string? MainImageUrl { get; set; }

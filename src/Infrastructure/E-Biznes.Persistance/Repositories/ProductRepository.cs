@@ -61,9 +61,10 @@ public class ProductRepository : Repository<Product>, IProductRepository
     public async Task<List<Favourite>> GetFavouritesByUserAsync(string userId)
     {
         return await _context.Favourites
-            .Include(f => f.Product)   // Məhsul məlumatını da gətir
-            .Where(f => f.UserId == userId && !f.IsDeleted)
-            .ToListAsync();
+         .Where(f => f.UserId == userId&&!f.IsDeleted)
+         .Include(f => f.Product)
+             .ThenInclude(p => p.ProductImages)
+         .ToListAsync();
     }
 
 }
